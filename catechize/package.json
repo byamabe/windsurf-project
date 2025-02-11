@@ -1,0 +1,31 @@
+{
+  "name": "catechize",
+  "private": true,
+  "type": "module",
+  "description": "A Lutheran media hub for organizing and hosting podcasts and other media content",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@headlessui/vue": "^1.7.23",
+    "@heroicons/vue": "^2.2.0",
+    "@nuxtjs/supabase": "^1.1.6",
+    "@nuxtjs/tailwindcss": "^6.11.4",
+    "@pinia/nuxt": "^0.5.1",
+    "@supabase/supabase-js": "^2.39.7",
+    "nuxt": "^3.14.1592",
+    "pinia": "^2.1.7",
+    "vue": "latest",
+    "vue-router": "latest"
+  },
+  "devDependencies": {
+    "@nuxt/typescript-build": "^3.0.2",
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3",
+    "vue-tsc": "^2.1.10"
+  }
+}

@@ -1,0 +1,58 @@
+name: Documentation Maintenance
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # Run at midnight on the 1st of every month
+  push:
+    paths:
+      - 'DEVELOPMENT_PROGRESS.md'
+      - 'docs/**/*.md'
+
+jobs:
+  check-file-sizes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check file sizes
+        run: |
+          #!/bin/bash
+          
+          # Configuration
+          MAX_SIZE=102400  # 100KB in bytes
+          
+          # Function to check file size
+          check_file() {
+            local file=$1
+            local size=$(stat -f%z "$file")
+            if [ $size -gt $MAX_SIZE ]; then
+              echo "::warning file=$file::File size ($size bytes) exceeds recommended limit of 100KB. Consider archiving older content."
+              echo "$file" >> .github/tmp/large_files.txt
+            fi
+          }
+          
+          # Create temporary directory
+          mkdir -p .github/tmp
+          
+          # Check main progress file
+          check_file "DEVELOPMENT_PROGRESS.md"
+          
+          # Check documentation files
+          find docs -name "*.md" -type f -exec bash -c 'check_file "$0"' {} \;
+          
+          # Create issue if large files found
+          if [ -f .github/tmp/large_files.txt ]; then
+            gh issue create \
+              --title "Documentation Maintenance Required" \
+              --body "The following files exceed the recommended size limit of 100KB:
+              $(cat .github/tmp/large_files.txt)
+              
+              Please run the archiving script to maintain manageable file sizes:
+              \`\`\`bash
+              ./scripts/archive_progress.sh
+              \`\`\`
+              " \
+              --label "documentation,maintenance"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
