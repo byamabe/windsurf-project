@@ -4,7 +4,7 @@
       <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
       <input
         id="title"
-        v-model="form.title"
+        v-model="formData.title"
         type="text"
         required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -15,7 +15,7 @@
       <label for="slug" class="block text-sm font-medium text-gray-700">Slug</label>
       <input
         id="slug"
-        v-model="form.slug"
+        v-model="formData.slug"
         type="text"
         required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -26,7 +26,7 @@
       <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
       <textarea
         id="description"
-        v-model="form.description"
+        v-model="formData.description"
         rows="3"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       />
@@ -36,7 +36,7 @@
       <label for="cover_image_url" class="block text-sm font-medium text-gray-700">Cover Image URL</label>
       <input
         id="cover_image_url"
-        v-model="form.cover_image_url"
+        v-model="formData.cover_image_url"
         type="url"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       />
@@ -46,7 +46,7 @@
       <label for="rss_feed_url" class="block text-sm font-medium text-gray-700">RSS Feed URL</label>
       <input
         id="rss_feed_url"
-        v-model="form.rss_feed_url"
+        v-model="formData.rss_feed_url"
         type="url"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       />
@@ -56,7 +56,7 @@
       <label for="website_url" class="block text-sm font-medium text-gray-700">Website URL</label>
       <input
         id="website_url"
-        v-model="form.website_url"
+        v-model="formData.website_url"
         type="url"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       />
@@ -66,7 +66,7 @@
       <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
       <select
         id="status"
-        v-model="form.status"
+        v-model="formData.status"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       >
         <option value="draft">Draft</option>
@@ -95,81 +95,59 @@
 </template>
 
 <script setup lang="ts">
+export interface PodcastFormData {
+  title: string
+  description: string | null
+  cover_image_url: string | null
+  slug: string
+  rss_feed_url: string | null
+  website_url: string | null
+  status: 'draft' | 'published' | 'archived'
+  author_id: string
+}
+
 import type { BasePodcast } from '~/composables/usePodcast'
 
 const props = defineProps<{
-  podcast?: BasePodcast
+  initialData?: Partial<PodcastFormData>
 }>()
 
 const emit = defineEmits<{
-  (e: 'submit', podcast: Omit<BasePodcast, 'id' | 'created_at' | 'updated_at'>): void
+  (e: 'submit', data: PodcastFormData): void
   (e: 'cancel'): void
 }>()
 
-type PodcastFormData = {
-  title: string
-  slug: string
-  description: string
-  cover_image_url: string
-  rss_feed_url: string
-  website_url: string
-  status: 'draft' | 'published' | 'archived'
-}
-
-const form = ref<PodcastFormData>({
+const formData = ref<PodcastFormData>({
   title: '',
+  description: null,
+  cover_image_url: null,
   slug: '',
-  description: '',
-  cover_image_url: '',
-  rss_feed_url: '',
-  website_url: '',
-  status: 'draft'
+  rss_feed_url: null,
+  website_url: null,
+  status: 'draft',
+  author_id: '',
+  ...props.initialData
 })
 
 const isSubmitting = ref(false)
 
 // Initialize form with initial data if provided
 onMounted(() => {
-  if (props.podcast) {
-    form.value = {
-      title: props.podcast.title ?? '',
-      slug: props.podcast.slug ?? '',
-      description: props.podcast.description ?? '',
-      cover_image_url: props.podcast.cover_image_url ?? '',
-      rss_feed_url: props.podcast.rss_feed_url ?? '',
-      website_url: props.podcast.website_url ?? '',
-      status: props.podcast.status ?? 'draft'
+  if (props.initialData) {
+    formData.value = {
+      title: props.initialData.title ?? '',
+      slug: props.initialData.slug ?? '',
+      description: props.initialData.description ?? null,
+      cover_image_url: props.initialData.cover_image_url ?? null,
+      rss_feed_url: props.initialData.rss_feed_url ?? null,
+      website_url: props.initialData.website_url ?? null,
+      status: props.initialData.status ?? 'draft',
+      author_id: props.initialData.author_id ?? ''
     }
   }
 })
 
-// Auto-generate slug from title
-watch(() => form.value.title, (newTitle) => {
-  if (!props.podcast?.slug) {
-    form.value.slug = newTitle
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-  }
-})
-
 const handleSubmit = async () => {
-  console.log('Form submitted:', form.value)
-  isSubmitting.value = true
-  try {
-    emit('submit', {
-      title: form.value.title,
-      slug: form.value.slug,
-      description: form.value.description || null,
-      cover_image_url: form.value.cover_image_url || null,
-      rss_feed_url: form.value.rss_feed_url || null,
-      website_url: form.value.website_url || null,
-      status: form.value.status
-    })
-  } catch (error) {
-    console.error('Error in form submission:', error)
-  } finally {
-    isSubmitting.value = false
-  }
+  emit('submit', formData.value)
 }
 </script>

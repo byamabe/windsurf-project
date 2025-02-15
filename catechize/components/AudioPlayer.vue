@@ -183,15 +183,23 @@
 </template>
 
 <script setup lang="ts">
+interface TimeRange {
+  start: number
+  end: number
+}
+
 import { ref, onMounted, onUnmounted, defineExpose, defineEmits } from 'vue'
 import AudioWaveform from './AudioWaveform.vue'
 
 const props = defineProps<{
   audioUrl: string
+  timeRanges?: TimeRange[]
 }>()
 
 const emit = defineEmits<{
   (e: 'timeupdate', time: number): void
+  (e: 'durationchange', duration: number): void
+  (e: 'seeked', time: TimeRange): void
 }>()
 
 const audioElement = ref<HTMLAudioElement | null>(null)
@@ -203,7 +211,7 @@ const isLoading = ref(false)
 const volume = ref(1)
 const isMuted = ref(false)
 const playbackSpeed = ref(1)
-const buffered = ref<{ start: number; end: number }[]>([])
+const buffered = ref<TimeRange[]>([])
 const isVolumeOpen = ref(false)
 const isSpeedOpen = ref(false)
 const isDragging = ref(false)
@@ -251,7 +259,7 @@ const handleLoadedMetadata = () => {
 const handleProgress = () => {
   if (audioElement.value) {
     const timeRanges = audioElement.value.buffered
-    const newBuffered = []
+    const newBuffered: TimeRange[] = []
     for (let i = 0; i < timeRanges.length; i++) {
       newBuffered.push({
         start: timeRanges.start(i),
@@ -261,6 +269,14 @@ const handleProgress = () => {
     buffered.value = newBuffered
   }
 }
+
+const seek = (time: TimeRange) => {
+  if (!audioElement.value) return
+  audioElement.value.currentTime = time.start
+  emit('seeked', time)
+}
+
+const timeRanges = ref<TimeRange[]>(props.timeRanges || [])
 
 const formatTime = (time: number): string => {
   const hours = Math.floor(time / 3600)
@@ -362,18 +378,6 @@ const setPlaybackSpeed = (speed: number) => {
   isSpeedOpen.value = false
 }
 
-const handleWaveformClick = (event: MouseEvent) => {
-  const target = event.target as HTMLElement
-  const rect = target.getBoundingClientRect()
-  const percent = (event.clientX - rect.left) / rect.width
-  const newTime = percent * duration.value
-  if (audioElement.value) {
-    audioElement.value.currentTime = newTime
-    currentTime.value = newTime
-  }
-}
-
-// Method to seek to a specific time
 const seekTo = (time: number) => {
   if (audioElement.value) {
     audioElement.value.currentTime = time;
@@ -427,6 +431,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 // Expose methods to parent
 defineExpose({
+  seek,
   seekTo,
   getAudioElement,
   togglePlay,

@@ -62,7 +62,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { Podcast } from '~/composables/usePodcast'
-import type { Episode } from '~/composables/useEpisode'
+import type { Episode } from '~/types/supabase'
 
 interface DisplayItem {
   id: string | number
@@ -74,11 +74,11 @@ interface DisplayItem {
 
 // Initialize composables
 const { fetchPodcasts } = usePodcast()
-const { fetchEpisodes } = useEpisode()
+const { fetchEpisodes: fetchEpisodesByPodcast } = useEpisode()
 
 // State for our data
 const featuredPodcasts = ref<Podcast[]>([])
-const latestEpisodes = ref<(Episode & { title: string })[]>([])
+const episodes = ref<Episode[]>([])
 const displayPodcasts = ref<DisplayItem[]>([])
 const displayEpisodes = ref<DisplayItem[]>([])
 
@@ -196,6 +196,21 @@ const trendingQuestions = ref<DisplayItem[]>([
   }
 ])
 
+// Fetch episodes
+const fetchAllEpisodes = async () => {
+  const allEpisodes: Episode[] = []
+  const podcasts = await fetchPodcasts()
+  if (podcasts) {
+    for (const podcast of podcasts) {
+      const podcastEpisodes = await fetchEpisodesByPodcast(podcast.id)
+      if (podcastEpisodes) {
+        allEpisodes.push(...podcastEpisodes)
+      }
+    }
+  }
+  episodes.value = allEpisodes
+}
+
 onMounted(async () => {
   try {
     // First fetch podcasts
@@ -216,31 +231,13 @@ onMounted(async () => {
       link: `/podcasts/${podcast.id}`
     } satisfies DisplayItem))
 
-    // Fetch episodes from all podcasts
-    const allEpisodes = []
-    for (const podcast of podcasts) {
-      try {
-        const episodes = await fetchEpisodes(podcast.id)
-        if (episodes) {
-          allEpisodes.push(...episodes)
-        }
-      } catch (err) {
-        console.error(`Error fetching episodes for podcast ${podcast.id}:`, err)
-      }
-    }
-
-    // Type guard function
-    function isPublishedEpisode(episode: Episode): episode is Episode & { title: string } {
-      return episode.status === 'published' && typeof episode.title === 'string' && episode.title.length > 0
-    }
+    await fetchAllEpisodes()
 
     // Sort episodes by date and take latest
-    const publishedEpisodes = allEpisodes
-      .filter(isPublishedEpisode)
+    const publishedEpisodes = episodes.value
+      .filter(episode => episode.status === 'published' && typeof episode.title === 'string' && episode.title.length > 0)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 4)
-
-    latestEpisodes.value = publishedEpisodes
 
     // Transform episodes for display with explicit type assertion
     displayEpisodes.value = publishedEpisodes.map(episode => {

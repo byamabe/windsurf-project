@@ -71,10 +71,10 @@
           <div>
             <button
               type="submit"
-              :disabled="isLoading"
+              :disabled="loading"
               class="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
             >
-              {{ isLoading ? 'Signing in...' : 'Sign in' }}
+              {{ loading ? 'Signing in...' : 'Sign in' }}
             </button>
           </div>
         </form>
@@ -154,10 +154,10 @@
         <div>
           <button
             type="submit"
-            :disabled="isLoading"
+            :disabled="loading"
             class="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
           >
-            {{ isLoading ? 'Signing in...' : 'Sign in' }}
+            {{ loading ? 'Signing in...' : 'Sign in' }}
           </button>
         </div>
       </form>
@@ -171,7 +171,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useSupabaseClient, useRouter } from '#imports'
+import { useRouter } from '#imports'
+import { useSupabaseClient } from '#imports'
 
 const supabase = useSupabaseClient()
 const router = useRouter()
@@ -192,13 +193,13 @@ const emit = defineEmits<{
 const email = ref('')
 const password = ref('')
 const rememberMe = ref(false)
-const isLoading = ref(false)
+const loading = ref(false)
 const error = ref('')
 
 async function handleLogin() {
   try {
     error.value = ''
-    isLoading.value = true
+    loading.value = true
     
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: email.value,
@@ -224,7 +225,7 @@ async function handleLogin() {
     error.value = err.message
     emit('error', err)
   } finally {
-    isLoading.value = false
+    loading.value = false
   }
 }
 
@@ -236,7 +237,7 @@ async function handleResetPassword() {
     }
 
     error.value = ''
-    isLoading.value = true
+    loading.value = true
 
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.value)
     if (resetError) throw resetError
@@ -246,7 +247,7 @@ async function handleResetPassword() {
     error.value = err.message
     emit('error', err)
   } finally {
-    isLoading.value = false
+    loading.value = false
   }
 }
 

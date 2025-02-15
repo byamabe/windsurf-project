@@ -1,5 +1,5 @@
 import { useSupabaseClient, useSupabaseUser } from '#imports'
-import type { Database } from '~/types/supabase'
+import type { Podcast } from '~/types/database'
 
 export interface BasePodcast {
   id: string
@@ -14,33 +14,21 @@ export interface BasePodcast {
   updated_at: string
 }
 
-export interface Podcast extends BasePodcast {
-  episode_count: number
-}
-
 export const usePodcast = () => {
-  const supabase = useSupabaseClient<Database>()
+  const supabase = useSupabaseClient()
   const user = useSupabaseUser()
 
-  const fetchPodcasts = async () => {
+  const fetchPodcasts = async (): Promise<Podcast[]> => {
     const { data: podcasts, error } = await supabase
       .from('podcasts')
-      .select(`
-        *,
-        episodes!inner (count)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    
-    // Transform the response to match our interface
-    return podcasts.map(podcast => ({
-      ...podcast,
-      episode_count: podcast.episodes[0].count || 0
-    }))
+    return podcasts
   }
 
-  const fetchPodcast = async (id: string) => {
+  const fetchPodcast = async (id: string): Promise<Podcast> => {
     const { data: podcast, error } = await supabase
       .from('podcasts')
       .select('*')
@@ -51,29 +39,24 @@ export const usePodcast = () => {
     return podcast
   }
 
-  const createPodcast = async (podcast: Omit<BasePodcast, 'id' | 'created_at' | 'updated_at'>) => {
-    console.log('Creating podcast:', podcast)
+  const createPodcast = async (podcast: Omit<Podcast, 'id' | 'created_at' | 'updated_at' | 'episode_count'>): Promise<Podcast> => {
     if (!user.value) throw new Error('User must be logged in to create a podcast')
 
     const { data, error } = await supabase
       .from('podcasts')
       .insert({
         ...podcast,
-        author_id: user.value.id
+        author_id: user.value.id,
+        status: 'draft'
       })
       .select()
       .single()
 
-    if (error) {
-      console.error('Supabase error:', error)
-      throw new Error(error.message)
-    }
-    
-    console.log('Created podcast:', data)
+    if (error) throw error
     return data
   }
 
-  const updatePodcast = async (id: string, updates: Partial<Omit<BasePodcast, 'id' | 'created_at' | 'updated_at'>>) => {
+  const updatePodcast = async (id: string, updates: Partial<Omit<Podcast, 'id' | 'created_at' | 'updated_at' | 'episode_count'>>): Promise<Podcast> => {
     const { data, error } = await supabase
       .from('podcasts')
       .update(updates)
@@ -85,7 +68,7 @@ export const usePodcast = () => {
     return data
   }
 
-  const deletePodcast = async (id: string) => {
+  const deletePodcast = async (id: string): Promise<void> => {
     const { error } = await supabase
       .from('podcasts')
       .delete()
@@ -102,3 +85,5 @@ export const usePodcast = () => {
     deletePodcast
   }
 }
+
+export type { Podcast }

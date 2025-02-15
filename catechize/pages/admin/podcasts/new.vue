@@ -16,13 +16,38 @@
 </template>
 
 <script setup lang="ts">
-import type { BasePodcast } from '~/composables/usePodcast'
+import type { Podcast } from '~/composables/usePodcast'
+import { useRouter } from '#imports'
+import { useSupabaseUser } from '#imports'
 
 const router = useRouter()
+const user = useSupabaseUser()
 const toast = useToast()
 const { createPodcast } = usePodcast()
 
-const handleSubmit = async (podcast: Omit<BasePodcast, 'id' | 'created_at' | 'updated_at'>) => {
+interface PodcastFormData {
+  title: string
+  description: string | null
+  cover_image_url: string | null
+  rss_feed_url: string | null
+  website_url: string | null
+  slug: string
+  status: 'draft' | 'published' | 'archived'
+}
+
+const handleSubmit = async (data: PodcastFormData) => {
+  const podcast: Omit<Podcast, 'id' | 'created_at' | 'updated_at' | 'episode_count'> = {
+    title: data.title,
+    description: data.description,
+    cover_image_url: data.cover_image_url,
+    rss_feed_url: data.rss_feed_url,
+    website_url: data.website_url,
+    slug: data.slug,
+    status: data.status,
+    published: data.status === 'published',
+    author_id: user.value?.id || ''
+  }
+  
   try {
     await createPodcast(podcast)
     toast.add({

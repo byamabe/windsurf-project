@@ -81,7 +81,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useSupabaseClient, useRouter } from '#imports'
+import { useRouter } from '#imports'
+import { useSupabaseClient } from '#imports'
 
 const supabase = useSupabaseClient()
 const router = useRouter()

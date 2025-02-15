@@ -53,15 +53,15 @@
                 @click="isUserMenuOpen = !isUserMenuOpen"
               >
                 <img
-                  v-if="userProfile?.avatar_url"
-                  :src="userProfile.avatar_url"
-                  :alt="userProfile.display_name"
+                  v-if="profile?.avatar_url"
+                  :src="profile.avatar_url"
+                  :alt="profile.display_name"
                   class="h-8 w-8 rounded-full"
                 />
                 <span v-else class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                  {{ userProfile?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?' }}
+                  {{ profile?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?' }}
                 </span>
-                <span>{{ userProfile?.display_name || user?.email || 'Anonymous' }}</span>
+                <span>{{ profile?.display_name || user?.email || 'Anonymous' }}</span>
               </button>
 
               <!-- User dropdown menu -->
@@ -165,21 +165,21 @@
             <div class="flex items-center px-4">
               <div class="flex-shrink-0">
                 <img
-                  v-if="userProfile?.avatar_url"
-                  :src="userProfile.avatar_url"
-                  :alt="userProfile.display_name"
+                  v-if="profile?.avatar_url"
+                  :src="profile.avatar_url"
+                  :alt="profile.display_name"
                   class="h-10 w-10 rounded-full"
                 />
                 <span
                   v-else
                   class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg"
                 >
-                  {{ userProfile?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?' }}
+                  {{ profile?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?' }}
                 </span>
               </div>
               <div class="ml-3">
                 <div class="text-base font-medium text-gray-800">
-                  {{ userProfile?.display_name || user?.email || 'Anonymous' }}
+                  {{ profile?.display_name || user?.email || 'Anonymous' }}
                 </div>
                 <div class="text-sm font-medium text-gray-500">{{ user?.email }}</div>
               </div>
@@ -250,75 +250,69 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useSupabaseClient, useSupabaseUser } from '#imports'
-import type { Database } from '~/types/database.types'
-import type { Profile } from '~/types/supabase'
 
+const supabase = useSupabaseClient()
 const user = useSupabaseUser()
-const supabase = useSupabaseClient<Database>()
-const { isAdmin } = useAuth()
+const loading = ref(true)
+
+interface Profile {
+  avatar_url: string | null
+  display_name: string
+}
+
+const profile = ref<Profile | null>(null)
+
+watch(user, async () => {
+  if (user.value) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('avatar_url, display_name')
+      .eq('user_id', user.value.id)
+      .single()
+
+    if (!error && data) {
+      profile.value = data
+    }
+  } else {
+    profile.value = null
+  }
+}, { immediate: true })
+
+onMounted(async () => {
+  try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (currentUser) {
+      user.value = currentUser
+    }
+  } catch (error) {
+    console.error('Error fetching user:', error)
+  } finally {
+    loading.value = false
+  }
+})
+
+const handleSignOut = async () => {
+  try {
+    await supabase.auth.signOut()
+    user.value = null
+  } catch (error) {
+    console.error('Error signing out:', error)
+  }
+}
 
 const showLoginModal = ref(false)
 const showSignupModal = ref(false)
 const isMobileMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
-const userProfile = ref<Profile | null>(null)
 const isAdminUser = ref(false)
 
-onMounted(async () => {
-  await fetchUserProfile()
-  await checkAdminStatus()
-})
-
-watch(user, async () => {
-  await fetchUserProfile()
-  await checkAdminStatus()
-})
-
-const checkAdminStatus = async () => {
-  if (user.value) {
-    isAdminUser.value = await isAdmin()
-  } else {
-    isAdminUser.value = false
-  }
-}
-
-// Watch for user changes and fetch profile when needed
-watch(user, async (newUser) => {
-  if (newUser) {
-    await fetchUserProfile()
-  } else {
-    userProfile.value = null
-  }
-})
-
-async function fetchUserProfile() {
-  try {
-    if (!user.value?.id) return
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.value.id)
-      .single()
-
-    if (error) {
-      console.error('Error fetching user profile:', error.message)
-      return
-    }
-
-    userProfile.value = data
-  } catch (error) {
-    console.error('Error in fetchUserProfile:', error)
-  }
-}
-
-async function handleLogout() {
+const handleLogout = async () => {
   try {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
     
     // Clear user state
-    userProfile.value = null
+    profile.value = null
     isUserMenuOpen.value = false
     
   } catch (error) {

@@ -21,20 +21,22 @@
 </template>
 
 <script setup lang="ts">
-import type { Episode } from '~/composables/useEpisode'
-import type { BasePodcast } from '~/composables/usePodcast'
+import type { Episode } from '~/types/database'
+import type { EpisodeFormData } from '~/components/EpisodeForm.vue'
 import EpisodeForm from '~/components/EpisodeForm.vue'
 import { usePodcast } from '~/composables/usePodcast'
 import { useRoute, useRouter } from 'vue-router'
 import { useEpisode } from '~/composables/useEpisode'
 import { useToast } from '~/composables/useToast'
 import { ref, onMounted } from 'vue'
+import { useSupabaseUser } from '#imports'
 
 const route = useRoute()
 const router = useRouter()
 const { createEpisode } = useEpisode()
 const { fetchPodcast } = usePodcast()
 const toast = useToast()
+const user = useSupabaseUser()
 
 const podcast = ref<BasePodcast>()
 const isLoading = ref(true)
@@ -82,29 +84,26 @@ onMounted(() => {
   loadPodcast()
 })
 
-const handleSubmit = async (episode: Omit<Episode, 'id' | 'created_at' | 'updated_at'>) => {
-  try {
-    console.log('Submitting episode:', episode)
-    // Make sure podcast_id is set
-    if (!episode.podcast_id) {
-      episode.podcast_id = route.query.podcastId as string
-    }
-    const result = await createEpisode(episode)
-    console.log('Created episode:', result)
-    toast.add({
-      title: 'Success',
-      description: 'Episode created successfully',
-      color: 'green'
-    })
-    navigateBack()
-  } catch (error) {
-    console.error('Error creating episode:', error)
-    toast.add({
-      title: 'Error',
-      description: error instanceof Error ? error.message : 'Failed to create episode',
-      color: 'red'
-    })
+const handleSubmit = async (data: EpisodeFormData) => {
+  const isPublished = data.status === 'published'
+  const episode: Omit<Episode, 'id' | 'created_at' | 'updated_at'> = {
+    title: data.title,
+    description: data.description,
+    audio_url: data.audio_url,
+    video_url: data.video_url,
+    transcript: data.transcript,
+    slug: data.slug,
+    duration: data.duration,
+    podcast_id: data.podcast_id,
+    status: data.status,
+    is_premium: data.is_premium,
+    published_at: isPublished ? new Date().toISOString() : null,
+    published: isPublished,
+    author_id: user.value?.id || ''
   }
+  
+  await useEpisode().createEpisode(episode)
+  navigateTo('/admin/episodes')
 }
 
 definePageMeta({

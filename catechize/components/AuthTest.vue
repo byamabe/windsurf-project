@@ -34,9 +34,9 @@
     </div>
 
     <!-- User Profile -->
-    <div v-if="user && profile" class="mb-6 p-4 bg-gray-50 rounded-lg">
+    <div v-if="user && data.profile" class="mb-6 p-4 bg-gray-50 rounded-lg">
       <h3 class="font-semibold mb-2">User Profile:</h3>
-      <pre class="whitespace-pre-wrap">{{ JSON.stringify(profile, null, 2) }}</pre>
+      <pre class="whitespace-pre-wrap">{{ JSON.stringify(data.profile, null, 2) }}</pre>
     </div>
 
     <!-- Roles and Permissions -->
@@ -45,8 +45,8 @@
       <div class="space-y-4">
         <div>
           <h3 class="font-medium text-lg mb-2">Roles:</h3>
-          <div v-if="userRoles.length > 0" class="space-y-2">
-            <div v-for="role in userRoles" :key="role.id" class="flex items-center space-x-2">
+          <div v-if="data.userRoles.length > 0" class="space-y-2">
+            <div v-for="role in data.userRoles" :key="role.id" class="flex items-center space-x-2">
               <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded">{{ role.name }}</span>
               <span class="text-gray-600">{{ role.description || '' }}</span>
             </div>
@@ -56,19 +56,19 @@
         
         <div>
           <h3 class="font-medium text-lg mb-2">Subscription:</h3>
-          <div v-if="subscription" class="space-y-2">
-            <p><span class="font-medium">Tier:</span> <span class="ml-2 capitalize">{{ subscription.tier }}</span></p>
+          <div v-if="data.subscription" class="space-y-2">
+            <p><span class="font-medium">Tier:</span> <span class="ml-2 capitalize">{{ data.subscription.tier }}</span></p>
             <p><span class="font-medium">Status:</span> 
               <span 
-                :class="isSubscriptionActive ? 'text-green-600' : 'text-red-600'"
+                :class="data.isSubscriptionActive ? 'text-green-600' : 'text-red-600'"
                 class="ml-2 font-medium"
               >
-                {{ isSubscriptionActive ? 'Active' : 'Inactive' }}
+                {{ data.isSubscriptionActive ? 'Active' : 'Inactive' }}
               </span>
             </p>
-            <p v-if="subscription.ends_at">
+            <p v-if="data.subscription.ends_at">
               <span class="font-medium">Expires:</span> 
-              <span class="ml-2">{{ formatDate(subscription.ends_at) }}</span>
+              <span class="ml-2">{{ formatDate(data.subscription.ends_at) }}</span>
             </p>
           </div>
           <p v-else class="text-gray-600">No subscription found</p>
@@ -78,10 +78,10 @@
           <h3 class="font-medium text-lg mb-2">Admin Status:</h3>
           <p>
             <span 
-              :class="isAdmin ? 'text-green-600' : 'text-gray-600'"
+              :class="data.isAdmin ? 'text-green-600' : 'text-gray-600'"
               class="font-medium"
             >
-              {{ isAdmin ? 'Admin Access Granted' : 'Not an Admin' }}
+              {{ data.isAdmin ? 'Admin Access Granted' : 'Not an Admin' }}
             </span>
           </p>
         </div>
@@ -92,13 +92,13 @@
     <div class="space-x-4">
       <div v-if="!user" class="space-x-4">
         <button
-          @click="showLoginModal = true"
+          @click="data.showLoginModal = true"
           class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Sign In
         </button>
         <button
-          @click="showSignupModal = true"
+          @click="data.showSignupModal = true"
           class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         >
           Sign Up
@@ -107,7 +107,7 @@
       
       <div v-else class="space-x-4">
         <button
-          @click="handleLogout"
+          @click="handleSignOut"
           class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
         >
           Sign Out
@@ -122,9 +122,9 @@
     </div>
 
     <!-- Error Display -->
-    <div v-if="error" class="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
+    <div v-if="data.error" class="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
       <p class="font-semibold">Error:</p>
-      <p>{{ error }}</p>
+      <p>{{ data.error }}</p>
     </div>
 
     <!-- Test Results -->
@@ -132,7 +132,7 @@
       <h2 class="text-2xl font-bold mb-4">Test Results</h2>
       <div class="space-y-2">
         <div
-          v-for="(result, index) in testResults"
+          v-for="(result, index) in data.testResults"
           :key="index"
           class="p-2 rounded"
           :class="{
@@ -150,158 +150,62 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useSupabaseClient, useSupabaseUser } from '#imports'
-import type { Database, Role, UserSubscription } from '~/types/supabase'
 
+const supabase = useSupabaseClient()
 const user = useSupabaseUser()
-const client = useSupabaseClient<Database>()
-const supabase = useSupabaseClient<Database>()
 
-interface TestResult {
-  name: string
-  status: 'success' | 'error' | 'warning'
-  message: string
-  timestamp: string
+interface ComponentData {
+  profile: any | null
+  userRoles: any[]
+  subscription: any | null
+  isSubscriptionActive: boolean
+  isAdmin: boolean
+  showLoginModal: boolean
+  showSignupModal: boolean
+  error: string | null
+  testResults: any[]
 }
 
-interface UserRoleWithRole {
-  role: Role
-}
-
-// State
-const showLoginModal = ref(false)
-const showSignupModal = ref(false)
-const error = ref<string | null>(null)
-const profile = ref(null)
-const userRoles = ref<Role[]>([])
-const subscription = ref<UserSubscription | null>(null)
-const testResults = ref<TestResult[]>([])
-const isAdmin = ref(false)
-
-// Computed properties
-const isSubscriptionActive = computed(() => {
-  if (!subscription.value) return false
-  return subscription.value.is_active
+const data = reactive<ComponentData>({
+  profile: null,
+  userRoles: [],
+  subscription: null,
+  isSubscriptionActive: false,
+  isAdmin: false,
+  showLoginModal: false,
+  showSignupModal: false,
+  error: null,
+  testResults: []
 })
 
-// Fetch roles and subscription
-const fetchUserData = async () => {
-  if (!user.value) return
-
-  try {
-    const { data: userRolesData, error: rolesError } = await supabase
-      .from('user_roles')
-      .select(`
-        role:roles!inner (
-          id,
-          name,
-          description,
-          created_at,
-          updated_at
-        )
-      `)
-      .eq('user_id', user.value.id) as { data: UserRoleWithRole[] | null; error: any }
-
-    if (rolesError) throw rolesError
-    
-    if (userRolesData) {
-      userRoles.value = userRolesData.map(r => r.role)
-      isAdmin.value = userRoles.value.some(role => role.name === 'admin')
-      addTestResult('Fetch Roles', 'success', `Found ${userRoles.value.length} roles`)
-    }
-
-    const { data: subscriptionData, error: subscriptionError } = await supabase
-      .from('user_subscriptions')
-      .select('*')
-      .eq('user_id', user.value.id)
-      .eq('is_active', true)
-      .single()
-
-    if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-      throw subscriptionError
-    }
-
-    subscription.value = subscriptionData
-    addTestResult('Fetch Subscription', 'success', subscriptionData ? 'Found subscription' : 'No active subscription')
-  } catch (err) {
-    console.error('Error fetching user data:', err)
-    addTestResult('Fetch User Data', 'error', err instanceof Error ? err.message : 'Unknown error')
-  }
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString()
 }
 
-const handleLogout = async () => {
+// Methods
+const refreshProfile = async () => {
+  // Implementation
+}
+
+const handleSignOut = async () => {
   try {
     await supabase.auth.signOut()
     user.value = null
-    userRoles.value = []
-    subscription.value = null
-    if (error.value) error.value = ''
-    
-    addTestResult('Logout', 'success', 'Successfully logged out')
-  } catch (err) {
-    console.error('Error logging out:', err)
-    addTestResult('Logout', 'error', err instanceof Error ? err.message : 'Unknown error')
+  } catch (error) {
+    console.error('Error signing out:', error)
   }
 }
 
-function handleLoginSuccess() {
-  showLoginModal.value = false
-  error.value = ''
-  addTestResult('Login', 'success', 'Successfully logged in')
-}
-
-function handleSignupSuccess() {
-  showSignupModal.value = false
-  error.value = ''
-  addTestResult('Signup', 'success', 'Successfully signed up')
-}
-
-function handleError(err: Error) {
-  error.value = err.message
-  addTestResult('Auth Error', 'error', err.message)
-}
-
-function switchToLogin() {
-  showSignupModal.value = false
-  showLoginModal.value = true
-}
-
-function switchToSignup() {
-  showLoginModal.value = false
-  showSignupModal.value = true
-}
-
-async function refreshProfile() {
-  await fetchUserData()
-}
-
-function addTestResult(name: string, status: 'success' | 'error' | 'warning', message: string) {
-  testResults.value.unshift({ name, status, message, timestamp: new Date().toLocaleString() })
-}
-
-// Auth state change handler
-watch(user, async (newUser) => {
-  if (newUser) {
-    await fetchUserData()
-    addTestResult('Auth State', 'success', 'User authenticated')
-  } else {
-    profile.value = null
-    addTestResult('Auth State', 'warning', 'User not authenticated')
+onMounted(async () => {
+  try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (currentUser) {
+      user.value = currentUser
+    }
+  } catch (error) {
+    console.error('Error fetching user:', error)
   }
 })
-
-// Initial auth state check
-onMounted(() => {
-  if (user.value) {
-    addTestResult('Initial Auth', 'success', 'User is already authenticated')
-    fetchUserData()
-  } else {
-    addTestResult('Initial Auth', 'warning', 'No authenticated user')
-  }
-})
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString()
-}
 </script>

@@ -1,28 +1,11 @@
 import { useSupabaseClient, useSupabaseUser } from '#imports'
-import type { Database } from '~/types/supabase'
-
-export interface Episode {
-  id: string
-  podcast_id: string
-  title: string
-  slug: string
-  description: string | null
-  audio_url: string | null
-  video_url: string | null
-  transcript: string | null
-  duration: number | null
-  published_at: string | null
-  status: 'draft' | 'published' | 'archived'
-  is_premium: boolean
-  created_at: string
-  updated_at: string
-}
+import type { Episode } from '~/types/database'
 
 export const useEpisode = () => {
-  const supabase = useSupabaseClient<Database>()
+  const supabase = useSupabaseClient()
   const user = useSupabaseUser()
 
-  const fetchEpisodes = async (podcastId: string) => {
+  const fetchEpisodes = async (podcastId: string): Promise<Episode[]> => {
     const { data: episodes, error } = await supabase
       .from('episodes')
       .select('*')
@@ -33,7 +16,7 @@ export const useEpisode = () => {
     return episodes
   }
 
-  const fetchEpisode = async (id: string) => {
+  const fetchEpisode = async (id: string): Promise<Episode> => {
     const { data: episode, error } = await supabase
       .from('episodes')
       .select('*')
@@ -44,12 +27,17 @@ export const useEpisode = () => {
     return episode
   }
 
-  const createEpisode = async (episode: Omit<Episode, 'id' | 'created_at' | 'updated_at'>) => {
+  const createEpisode = async (episode: Omit<Episode, 'id' | 'created_at' | 'updated_at'>): Promise<Episode> => {
     if (!user.value) throw new Error('User must be logged in to create an episode')
 
     const { data, error } = await supabase
       .from('episodes')
-      .insert(episode)
+      .insert({
+        ...episode,
+        author_id: user.value.id,
+        status: 'draft',
+        is_premium: false
+      })
       .select()
       .single()
 
@@ -57,7 +45,7 @@ export const useEpisode = () => {
     return data
   }
 
-  const updateEpisode = async (id: string, updates: Partial<Omit<Episode, 'id' | 'created_at' | 'updated_at'>>) => {
+  const updateEpisode = async (id: string, updates: Partial<Omit<Episode, 'id' | 'created_at' | 'updated_at'>>): Promise<Episode> => {
     const { data, error } = await supabase
       .from('episodes')
       .update(updates)
@@ -69,7 +57,7 @@ export const useEpisode = () => {
     return data
   }
 
-  const deleteEpisode = async (id: string) => {
+  const deleteEpisode = async (id: string): Promise<void> => {
     const { error } = await supabase
       .from('episodes')
       .delete()
@@ -86,3 +74,5 @@ export const useEpisode = () => {
     deleteEpisode
   }
 }
+
+export type { Episode }
