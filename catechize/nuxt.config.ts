@@ -5,14 +5,24 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
+  typescript: {
+    strict: true,
+    typeCheck: true,
+    shim: false
+  },
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
     '@nuxtjs/supabase'
   ],
-  typescript: {
-    strict: true,
-    typeCheck: true
+  nitro: {
+    preset: 'netlify'
+  },
+  runtimeConfig: {
+    public: {
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseKey: process.env.SUPABASE_KEY
+    }
   },
   supabase: {
     redirectOptions: {
@@ -20,8 +30,6 @@ export default defineNuxtConfig({
       callback: '/auth/confirm',
       exclude: ['/*'],
     },
-    url: process.env.SUPABASE_URL,
-    key: process.env.SUPABASE_KEY,
     cookieOptions: {
       domain: process.env.NODE_ENV === 'development' ? 'localhost.localtest.me' : undefined,
       path: '/',
