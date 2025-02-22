@@ -12,48 +12,55 @@ export const useTwitterCard = () => {
   }) => {
     const { title, description, image, player } = options
 
+    const meta = [
+      {
+        name: 'twitter:title',
+        content: title
+      },
+      {
+        name: 'twitter:description',
+        content: description
+      },
+      ...(image ? [{
+        name: 'twitter:image',
+        content: image
+      }] : [])
+    ]
+
+    if (player) {
+      meta.push(
+        {
+          name: 'twitter:card',
+          content: 'player'
+        },
+        {
+          name: 'twitter:player',
+          content: player.url
+        },
+        {
+          name: 'twitter:player:width',
+          content: player.width.toString()
+        },
+        {
+          name: 'twitter:player:height',
+          content: player.height.toString()
+        }
+      )
+      if (player.audio) {
+        meta.push({
+          name: 'twitter:player:stream',
+          content: player.audio
+        })
+      }
+    } else {
+      meta.push({
+        name: 'twitter:card',
+        content: 'summary_large_image'
+      })
+    }
+
     useHead({
-      meta: [
-        {
-          name: 'twitter:title',
-          content: title
-        },
-        {
-          name: 'twitter:description',
-          content: description
-        },
-        ...(image ? [{
-          name: 'twitter:image',
-          content: image
-        }] : []),
-        ...(player ? [
-          {
-            name: 'twitter:card',
-            content: 'player'
-          },
-          {
-            name: 'twitter:player',
-            content: player.url
-          },
-          {
-            name: 'twitter:player:width',
-            content: player.width.toString()
-          },
-          {
-            name: 'twitter:player:height',
-            content: player.height.toString()
-          },
-          ...(player.audio ? [{
-            name: 'twitter:player:stream',
-            content: player.audio
-          }] : [])
-        ] : [
-          {
-            name: 'twitter:card',
-            content: 'summary_large_image'
-          }
-        ])
-      ]
+      meta
     })
   }
 

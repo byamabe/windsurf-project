@@ -149,12 +149,12 @@ onMounted(async () => {
       title: episode.value.title,
       description: episode.value.description || 'Listen to this episode on Catechize',
       image: 'https://catechize.org/images/hero-bg.jpg',
-      player: {
+      player: episode.value.audio_url ? {
         url: `https://catechize.org/player/${id}`,
         width: 480,
         height: 240,
-        audio: episode.value.audio_url || undefined
-      }
+        audio: episode.value.audio_url
+      } : undefined
     })
   } catch (error) {
     console.error('Error fetching episode:', error)
