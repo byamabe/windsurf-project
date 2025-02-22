@@ -236,7 +236,11 @@ onMounted(async () => {
     // Sort episodes by date and take latest
     const publishedEpisodes = episodes.value
       .filter(episode => episode.status === 'published' && typeof episode.title === 'string' && episode.title.length > 0)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .sort((a, b) => {
+        const dateA = a.createdAt || '0';
+        const dateB = b.createdAt || '0';
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      })
       .slice(0, 4)
 
     // Transform episodes for display with explicit type assertion
