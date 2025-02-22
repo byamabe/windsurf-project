@@ -44,6 +44,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from '#imports'
 import { useEpisode } from '~/composables/useEpisode'
+import type { Episode } from '~/composables/useEpisode'
 import { twitterConfig } from '~/config/twitter'
 import TwitterCardPlayer from '~/components/TwitterCardPlayer.vue'
 
