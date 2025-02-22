@@ -65,7 +65,7 @@ export default defineNuxtConfig({
         { name: 'twitter:site', content: '@catechize_org' }, 
         { name: 'twitter:title', content: 'Catechize - Lutheran Media Hub' },
         { name: 'twitter:description', content: 'A Lutheran media hub for organizing and accessing podcasts and other media content.' },
-        { name: 'twitter:image', content: '/images/hero-bg.jpg' }, 
+        { name: 'twitter:image', content: 'https://catechize.org/images/hero-bg.jpg' }, 
       ]
     }
   }
