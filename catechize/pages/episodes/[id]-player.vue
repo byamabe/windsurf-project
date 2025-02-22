@@ -43,7 +43,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from '#imports'
+import { useRuntimeConfig } from 'nuxt/app'
 import { useEpisode } from '~/composables/useEpisode'
+import { useTwitterCard } from '~/composables/useTwitterCard'
 import type { Episode } from '~/composables/useEpisode'
 import { twitterConfig } from '~/config/twitter'
 import TwitterCardPlayer from '~/components/TwitterCardPlayer.vue'
@@ -57,7 +59,9 @@ interface PlayerEpisode {
 }
 
 const route = useRoute()
+const config = useRuntimeConfig()
 const { fetchEpisode } = useEpisode()
+const { updateTwitterCard } = useTwitterCard()
 const episode = ref<PlayerEpisode | null>(null)
 const player = ref()
 
@@ -75,6 +79,20 @@ onMounted(async () => {
         audioUrl: fetchedEpisode.audioUrl,
         imageUrl: fetchedEpisode.imageUrl
       }
+
+      // Set Twitter Card meta tags for the player page
+      const baseUrl = config.public.siteUrl || 'https://catechize.org'
+      updateTwitterCard({
+        title: episode.value.title,
+        description: episode.value.description,
+        image: episode.value.imageUrl || undefined,
+        player: {
+          url: `${baseUrl}/episodes/${id}-player`, // Use absolute URL
+          width: twitterConfig.player.width,
+          height: twitterConfig.player.height,
+          audio: episode.value.audioUrl || undefined
+        }
+      })
     }
   } catch (error) {
     console.error('Error fetching episode:', error)
