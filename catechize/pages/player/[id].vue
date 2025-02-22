@@ -67,7 +67,7 @@ onMounted(async () => {
     const id = route.params.id as string
     const fetchedEpisode = await fetchEpisode(id)
     
-    if (fetchedEpisode) {
+    if (fetchedEpisode?.audioUrl) {
       episode.value = {
         id: fetchedEpisode.id,
         title: fetchedEpisode.title || 'Untitled Episode',
