@@ -86,6 +86,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { Episode } from '~/composables/useEpisode'
+import { useTwitterCard } from '~/composables/useTwitterCard'
 
 const route = useRoute()
 const { fetchEpisode } = useEpisode()
@@ -141,6 +142,20 @@ onMounted(async () => {
   try {
     const id = route.params.id as string
     episode.value = await fetchEpisode(id)
+    
+    // Update Twitter Card meta tags
+    const { updateTwitterCard } = useTwitterCard()
+    updateTwitterCard({
+      title: episode.value.title,
+      description: episode.value.description || 'Listen to this episode on Catechize',
+      image: episode.value.image_url || 'https://catechize.org/images/hero-bg.jpg',
+      player: {
+        url: `https://catechize.org/player/${id}`,
+        width: 480,
+        height: 240,
+        audio: episode.value.audio_url
+      }
+    })
   } catch (error) {
     console.error('Error fetching episode:', error)
   } finally {
