@@ -85,10 +85,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from '#imports'
+import { useRuntimeConfig } from 'nuxt/app'
 import { useEpisode } from '~/composables/useEpisode'
 import type { Episode } from '~/composables/useEpisode'
 import { useTwitterCard } from '~/composables/useTwitterCard'
-import { useRuntimeConfig } from '#imports'
 import { twitterConfig } from '~/config/twitter'
 import AudioPlayer from '~/components/AudioPlayer.vue'
 import YouTubeEmbed from '~/components/YouTubeEmbed.vue'
