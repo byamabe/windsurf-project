@@ -92,7 +92,7 @@ const handleSubmit = async (data: EpisodeFormData) => {
     audioUrl: data.audioUrl,
     videoUrl: data.videoUrl,
     podcastId: route.params.podcastId as string,
-    status: isPublished ? 'published' : 'draft',
+    status: isPublished ? ('published' as const) : ('draft' as const),
     authorId: user.value?.id || '',
     isPremium: data.isPremium || false
   }

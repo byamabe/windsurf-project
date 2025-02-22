@@ -7,7 +7,7 @@
           <h1 class="text-3xl font-bold text-white mb-2">{{ episode.title }}</h1>
           <p class="text-gray-400 text-lg mb-2">{{ episode.description }}</p>
           <div class="text-sm text-gray-500">
-            Published {{ formatDate(episode.publishedAt) }}
+            Published {{ formatDate(episode.publishedAt || null) }}
           </div>
         </div>
 
