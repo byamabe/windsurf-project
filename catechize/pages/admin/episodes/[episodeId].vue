@@ -18,7 +18,7 @@
 
     <div v-else class="mt-8">
       <EpisodeForm
-        :podcast-id="episode?.podcast_id ?? ''"
+        :podcast-id="episode?.podcastId ?? ''"
         :podcast-title="podcast?.title ?? ''"
         :episode="episode"
         @submit="handleSubmit"
@@ -45,8 +45,8 @@ const isLoading = ref(true)
 onMounted(async () => {
   try {
     episode.value = await fetchEpisode(route.params.episodeId as string)
-    if (episode.value?.podcast_id) {
-      podcast.value = await fetchPodcast(episode.value.podcast_id)
+    if (episode.value?.podcastId) {
+      podcast.value = await fetchPodcast(episode.value.podcastId)
     }
   } catch (error) {
     console.error('Error loading episode:', error)
@@ -80,7 +80,7 @@ const handleSubmit = async (updates: any) => {
 }
 
 const navigateBack = () => {
-  router.push(`/admin/episodes/podcast/${episode.value?.podcast_id}`)
+  router.push(`/admin/episodes/podcast/${episode.value?.podcastId}`)
 }
 
 definePageMeta({

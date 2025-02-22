@@ -87,9 +87,16 @@
                     <span
                       :class="[
                         episode.status === 'published'
-                          ? 'text-green-700 bg-green-50 ring-green-600/20'
-                          : 'text-gray-600 bg-gray-50 ring-gray-500/10',
-                        'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset'
+                          ? 'text-green-700 bg-green-50'
+                          : episode.status === 'draft'
+                          ? 'text-yellow-700 bg-yellow-50'
+                          : 'text-red-700 bg-red-50',
+                        'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
+                        episode.status === 'published'
+                          ? 'ring-green-600/20'
+                          : episode.status === 'draft'
+                          ? 'ring-yellow-600/20'
+                          : 'ring-red-600/20',
                       ]"
                     >
                       {{ episode.status }}
@@ -98,13 +105,13 @@
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <span
                       :class="[
-                        episode.is_premium
-                          ? 'text-yellow-700 bg-yellow-50 ring-yellow-600/20'
-                          : 'text-gray-600 bg-gray-50 ring-gray-500/10',
-                        'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset'
+                        episode.isPremium
+                          ? 'text-blue-700 bg-blue-50 ring-blue-600/20'
+                          : 'text-gray-700 bg-gray-50 ring-gray-600/20',
+                        'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ml-2',
                       ]"
                     >
-                      {{ episode.is_premium ? 'Premium' : 'Free' }}
+                      {{ episode.isPremium ? 'Premium' : 'Free' }}
                     </span>
                   </td>
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">

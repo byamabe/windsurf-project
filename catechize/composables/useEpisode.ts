@@ -9,6 +9,13 @@ export interface Episode {
   videoUrl?: string | null
   publishedAt?: string | null
   isPremium?: boolean
+  podcastId: string
+  status: 'draft' | 'published' | 'archived'
+  authorId?: string
+  transcript?: string | null
+  slug?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export const useEpisode = () => {
