@@ -7,23 +7,23 @@
           <h1 class="text-3xl font-bold text-white mb-2">{{ episode.title }}</h1>
           <p class="text-gray-400 text-lg mb-2">{{ episode.description }}</p>
           <div class="text-sm text-gray-500">
-            Published {{ formatDate(episode.published_at) }}
+            Published {{ formatDate(episode.publishedAt) }}
           </div>
         </div>
 
         <!-- Player Section -->
         <div class="sticky top-16 z-40 bg-gray-900">
-          <div v-if="episode.video_url" class="mb-4 rounded-lg shadow-xl">
+          <div v-if="episode.videoUrl" class="mb-4 rounded-lg shadow-xl">
             <YouTubeEmbed
-              v-if="isYouTubeUrl(episode.video_url)"
-              :video-url="episode.video_url"
+              v-if="isYouTubeUrl(episode.videoUrl)"
+              :video-url="episode.videoUrl"
               ref="youtubePlayerRef"
               @timeupdate="handleTimeUpdate"
             />
             <video
               v-else
               class="w-full aspect-video rounded-lg"
-              :src="episode.video_url"
+              :src="episode.videoUrl"
               controls
               preload="metadata"
               ref="videoRef"
@@ -38,9 +38,9 @@
             </video>
           </div>
 
-          <div v-if="episode.audio_url" class="mb-4">
+          <div v-if="episode.audioUrl" class="mb-4">
             <AudioPlayer 
-              :audio-url="episode.audio_url" 
+              :audio-url="episode.audioUrl" 
               ref="audioRef"
               @timeupdate="handleTimeUpdate"
             />
@@ -58,7 +58,7 @@
         </div>
 
         <!-- Premium Content Notice -->
-        <div v-if="episode.is_premium" class="mt-8 bg-blue-900/50 border border-blue-500/20 rounded-lg p-6">
+        <div v-if="episode.isPremium" class="mt-8 bg-blue-900/50 border border-blue-500/20 rounded-lg p-6">
           <h3 class="text-xl font-semibold text-white mb-2">Premium Content</h3>
           <p class="text-gray-300">
             This episode is exclusive to premium members. 
@@ -112,13 +112,13 @@ const handleTimeUpdate = (time: number) => {
 };
 
 const handleSeek = (timeInSeconds: number) => {
-  if (episode.value?.video_url) {
-    if (isYouTubeUrl(episode.value.video_url)) {
+  if (episode.value?.videoUrl) {
+    if (isYouTubeUrl(episode.value.videoUrl)) {
       youtubePlayerRef.value?.seekTo(timeInSeconds);
     } else {
       videoRef.value && (videoRef.value.currentTime = timeInSeconds);
     }
-  } else if (episode.value?.audio_url) {
+  } else if (episode.value?.audioUrl) {
     const audioElement = audioRef.value?.getAudioElement();
     if (audioElement) {
       audioElement.currentTime = timeInSeconds;
@@ -148,12 +148,12 @@ onMounted(async () => {
     updateTwitterCard({
       title: episode.value.title,
       description: episode.value.description || 'Listen to this episode on Catechize',
-      image: 'https://catechize.org/images/hero-bg.jpg',
-      player: episode.value.audio_url ? {
+      image: episode.value.imageUrl || 'https://catechize.org/images/hero-bg.jpg',
+      player: episode.value.audioUrl ? {
         url: `https://catechize.org/player/${id}`,
         width: 480,
         height: 240,
-        audio: episode.value.audio_url
+        audio: episode.value.audioUrl
       } : undefined
     })
   } catch (error) {

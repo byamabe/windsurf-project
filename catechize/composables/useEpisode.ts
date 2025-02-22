@@ -1,5 +1,15 @@
 import { useSupabaseClient, useSupabaseUser } from '#imports'
-import type { Episode } from '~/types/database'
+
+export interface Episode {
+  id: string
+  title: string
+  description: string | null
+  audioUrl: string | null
+  imageUrl?: string | null
+  videoUrl?: string | null
+  publishedAt?: string | null
+  isPremium?: boolean
+}
 
 export const useEpisode = () => {
   const supabase = useSupabaseClient()
@@ -74,5 +84,3 @@ export const useEpisode = () => {
     deleteEpisode
   }
 }
-
-export type { Episode }
