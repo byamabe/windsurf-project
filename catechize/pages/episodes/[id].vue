@@ -39,7 +39,7 @@
           <div v-if="episode.audioUrl" class="mb-4">
             <AudioPlayer
               :audio-url="episode.audioUrl"
-              ref="audioRef"
+              ref="audioPlayerRef"
               @timeupdate="handleTimeUpdate"
             />
           </div>
@@ -83,6 +83,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useEpisode } from '~/composables/useEpisode'
 import type { Episode } from '~/composables/useEpisode'
 import { useTwitterCard } from '~/composables/useTwitterCard'
 import AudioPlayer from '~/components/AudioPlayer.vue'
@@ -94,7 +96,7 @@ const episode = ref<Episode | null>(null)
 const loading = ref(true)
 const videoRef = ref<HTMLVideoElement | null>(null)
 const youtubePlayerRef = ref<any>(null)
-const audioRef = ref<any>(null)
+const audioPlayerRef = ref<any>(null)
 const currentTime = ref<number>(0)
 
 const formatDate = (date: string | null) => {
@@ -118,7 +120,7 @@ const handleSeek = (timeInSeconds: number) => {
       videoRef.value && (videoRef.value.currentTime = timeInSeconds);
     }
   } else if (episode.value?.audioUrl) {
-    const audioElement = audioRef.value?.getAudioElement();
+    const audioElement = audioPlayerRef.value?.getAudioElement();
     if (audioElement) {
       audioElement.currentTime = timeInSeconds;
     }
