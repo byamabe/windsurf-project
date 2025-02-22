@@ -1,3 +1,5 @@
+import { twitterConfig } from '~/config/twitter'
+
 export const useTwitterCard = () => {
   const updateTwitterCard = (options: {
     title: string
@@ -13,6 +15,10 @@ export const useTwitterCard = () => {
     const { title, description, image, player } = options
 
     const meta = [
+      {
+        name: 'twitter:site',
+        content: twitterConfig.siteHandle
+      },
       {
         name: 'twitter:title',
         content: title
