@@ -62,7 +62,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { Podcast } from '~/composables/usePodcast'
-import type { Episode } from '~/types/supabase'
+import type { Episode } from '~/composables/useEpisode'
 
 interface DisplayItem {
   id: string | number
