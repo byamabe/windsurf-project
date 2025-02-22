@@ -6,14 +6,14 @@
       height: `${twitterConfig.player.height}px`,
     }"
   >
-    <div v-if="episode?.audioUrl" class="relative h-full bg-gray-900">
+    <div v-if="episode?.audioUrl" class="relative h-full bg-gray-900/95 backdrop-blur-sm">
       <!-- Background image with overlay -->
       <div 
         v-if="episode.imageUrl"
-        class="absolute inset-0 bg-cover bg-center"
+        class="absolute inset-0 bg-cover bg-center opacity-50"
         :style="{ backgroundImage: `url(${episode.imageUrl})` }"
       >
-        <div class="absolute inset-0 bg-black/50"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/50 to-black/80"></div>
       </div>
 
       <!-- Player content -->
@@ -34,7 +34,7 @@
     </div>
 
     <!-- Loading state -->
-    <div v-else class="h-full flex items-center justify-center">
+    <div v-else class="h-full flex items-center justify-center bg-gray-900">
       <div class="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
     </div>
   </div>

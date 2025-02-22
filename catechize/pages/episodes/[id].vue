@@ -84,10 +84,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute } from '#imports'
 import { useEpisode } from '~/composables/useEpisode'
 import type { Episode } from '~/composables/useEpisode'
 import { useTwitterCard } from '~/composables/useTwitterCard'
+import { useRuntimeConfig } from '#imports'
 import { twitterConfig } from '~/config/twitter'
 import AudioPlayer from '~/components/AudioPlayer.vue'
 import YouTubeEmbed from '~/components/YouTubeEmbed.vue'
@@ -166,6 +167,32 @@ onMounted(async () => {
         audioUrl: episode.value.audioUrl,
         videoUrl: episode.value.videoUrl
       })
+
+      // Update Twitter Card meta tags
+      const { updateTwitterCard } = useTwitterCard()
+      const config = useRuntimeConfig()
+      const baseUrl = config.public.siteUrl || 'https://catechize.org'
+      
+      if (episode.value.audioUrl) {
+        updateTwitterCard({
+          title: episode.value.title || 'Untitled Episode',
+          description: episode.value.description || 'Listen to this episode on Catechize',
+          image: episode.value.imageUrl || `${baseUrl}/images/hero-bg.jpg`,
+          player: {
+            url: `${baseUrl}/episodes/${id}-player`,
+            width: twitterConfig.player.width,
+            height: twitterConfig.player.height,
+            audio: episode.value.audioUrl
+          }
+        })
+      } else {
+        // Regular card for episodes without audio
+        updateTwitterCard({
+          title: episode.value.title || 'Untitled Episode',
+          description: episode.value.description || 'View this episode on Catechize',
+          image: episode.value.imageUrl || `${baseUrl}/images/hero-bg.jpg`
+        })
+      }
     } else {
       console.error('Episode not found')
     }

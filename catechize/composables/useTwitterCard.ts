@@ -47,10 +47,16 @@ export const useTwitterCard = () => {
         }
       )
       if (player.audio) {
-        meta.push({
-          name: 'twitter:player:stream',
-          content: player.audio
-        })
+        meta.push(
+          {
+            name: 'twitter:player:stream',
+            content: player.audio
+          },
+          {
+            name: 'twitter:player:stream:content_type',
+            content: 'audio/mpeg'  // Add content type for audio
+          }
+        )
       }
     } else {
       meta.push({
