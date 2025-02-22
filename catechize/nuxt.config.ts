@@ -62,10 +62,10 @@ export default defineNuxtConfig({
         { hid: 'description', name: 'description', content: 'A Lutheran media hub for organizing and hosting podcasts and other media content' },
         // Twitter Card meta tags
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:site', content: '@catechize_org' }, // Replace with your Twitter handle
+        { name: 'twitter:site', content: '@catechize_org' }, 
         { name: 'twitter:title', content: 'Catechize - Lutheran Media Hub' },
         { name: 'twitter:description', content: 'A Lutheran media hub for organizing and accessing podcasts and other media content.' },
-        { name: 'twitter:image', content: 'https://catechize.org/social-preview.jpg' }, // Replace with your actual image URL
+        { name: 'twitter:image', content: '/images/hero-bg.jpg' }, 
       ]
     }
   }
