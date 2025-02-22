@@ -42,6 +42,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useEpisode } from '~/composables/useEpisode'
 import { twitterConfig } from '~/config/twitter'
 import TwitterCardPlayer from '~/components/TwitterCardPlayer.vue'
 
@@ -55,6 +57,7 @@ interface Episode {
 }
 
 const route = useRoute()
+const { fetchEpisode } = useEpisode()
 const episode = ref<Episode | null>(null)
 const player = ref()
 
