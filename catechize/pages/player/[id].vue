@@ -44,6 +44,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEpisode } from '~/composables/useEpisode'
+import type { Episode } from '~/composables/useEpisode'
 import { twitterConfig } from '~/config/twitter'
 import TwitterCardPlayer from '~/components/TwitterCardPlayer.vue'
 
@@ -65,7 +66,17 @@ const player = ref()
 onMounted(async () => {
   try {
     const id = route.params.id as string
-    episode.value = await fetchEpisode(id)
+    const fetchedEpisode = await fetchEpisode(id)
+    
+    if (fetchedEpisode) {
+      episode.value = {
+        id: fetchedEpisode.id,
+        title: fetchedEpisode.title,
+        description: fetchedEpisode.description || 'Listen to this episode on Catechize',
+        audioUrl: fetchedEpisode.audioUrl,
+        imageUrl: fetchedEpisode.imageUrl
+      }
+    }
 
     // Add CORS headers for Twitter embedding
     useHead({
