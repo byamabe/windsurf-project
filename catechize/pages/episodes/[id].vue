@@ -148,12 +148,12 @@ onMounted(async () => {
     updateTwitterCard({
       title: episode.value.title,
       description: episode.value.description || 'Listen to this episode on Catechize',
-      image: episode.value.image_url || 'https://catechize.org/images/hero-bg.jpg',
+      image: 'https://catechize.org/images/hero-bg.jpg',
       player: {
         url: `https://catechize.org/player/${id}`,
         width: 480,
         height: 240,
-        audio: episode.value.audio_url
+        audio: episode.value.audio_url || undefined
       }
     })
   } catch (error) {
