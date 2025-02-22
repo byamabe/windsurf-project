@@ -155,7 +155,7 @@ onMounted(async () => {
         description: episode.value.description || 'Listen to this episode on Catechize',
         image: episode.value.imageUrl || `${baseUrl}/images/hero-bg.jpg`,
         player: {
-          url: `${baseUrl}/player/${id}`,
+          url: `${baseUrl}/episodes/${id}/player`,
           width: 435,
           height: 251,
           audio: episode.value.audioUrl
