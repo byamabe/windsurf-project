@@ -71,11 +71,12 @@
       <!-- Loading State -->
       <div v-else-if="loading" class="text-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+        <p class="text-gray-400 mt-4">Loading episode...</p>
       </div>
 
       <!-- Error State -->
       <div v-else class="text-center py-12">
-        <p class="text-red-500">Failed to load episode</p>
+        <p class="text-red-500">Failed to load episode. Please try again later.</p>
       </div>
     </div>
   </div>
@@ -87,8 +88,10 @@ import { useRoute } from 'vue-router'
 import { useEpisode } from '~/composables/useEpisode'
 import type { Episode } from '~/composables/useEpisode'
 import { useTwitterCard } from '~/composables/useTwitterCard'
+import { twitterConfig } from '~/config/twitter'
 import AudioPlayer from '~/components/AudioPlayer.vue'
 import YouTubeEmbed from '~/components/YouTubeEmbed.vue'
+import InteractiveTranscript from '~/components/InteractiveTranscript.vue'
 
 const route = useRoute()
 const { fetchEpisode } = useEpisode()
@@ -98,6 +101,15 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 const youtubePlayerRef = ref<any>(null)
 const audioPlayerRef = ref<any>(null)
 const currentTime = ref<number>(0)
+
+// Debug function
+function logEpisodeData() {
+  console.log('Episode data:', {
+    episode: episode.value,
+    hasAudio: episode.value?.audioUrl ? true : false,
+    audioUrl: episode.value?.audioUrl
+  })
+}
 
 const formatDate = (date: string | null) => {
   if (!date) return ''
@@ -142,31 +154,20 @@ const isYouTubeUrl = (url: string): boolean => {
 onMounted(async () => {
   try {
     const id = route.params.id as string
-    episode.value = await fetchEpisode(id)
-    
-    // Update Twitter Card meta tags
-    const { updateTwitterCard } = useTwitterCard()
-    const config = useRuntimeConfig()
-    const baseUrl = config.public.siteUrl || 'https://catechize.org'
-    
-    if (episode.value?.audioUrl) {
-      updateTwitterCard({
-        title: episode.value.title || 'Untitled Episode',
-        description: episode.value.description || 'Listen to this episode on Catechize',
-        image: episode.value.imageUrl || `${baseUrl}/images/hero-bg.jpg`,
-        player: {
-          url: `${baseUrl}/episodes/${id}/player`,
-          width: 435,
-          height: 251,
-          audio: episode.value.audioUrl
-        }
+    console.log('Fetching episode:', id)
+    const fetchedEpisode = await fetchEpisode(id)
+
+    if (fetchedEpisode) {
+      episode.value = fetchedEpisode
+      console.log('Episode loaded:', {
+        id: episode.value.id,
+        hasAudio: !!episode.value.audioUrl,
+        hasVideo: !!episode.value.videoUrl,
+        audioUrl: episode.value.audioUrl,
+        videoUrl: episode.value.videoUrl
       })
     } else {
-      updateTwitterCard({
-        title: episode.value?.title || 'Untitled Episode',
-        description: episode.value?.description || 'Listen to this episode on Catechize',
-        image: episode.value?.imageUrl || `${baseUrl}/images/hero-bg.jpg`
-      })
+      console.error('Episode not found')
     }
   } catch (error) {
     console.error('Error fetching episode:', error)

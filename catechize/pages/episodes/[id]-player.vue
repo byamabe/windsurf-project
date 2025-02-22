@@ -6,7 +6,7 @@
       height: `${twitterConfig.player.height}px`,
     }"
   >
-    <div v-if="episode" class="relative h-full bg-gray-900">
+    <div v-if="episode?.audioUrl" class="relative h-full bg-gray-900">
       <!-- Background image with overlay -->
       <div 
         v-if="episode.imageUrl"
@@ -47,13 +47,12 @@ import { useEpisode } from '~/composables/useEpisode'
 import { twitterConfig } from '~/config/twitter'
 import TwitterCardPlayer from '~/components/TwitterCardPlayer.vue'
 
-// Types for local use
 interface PlayerEpisode {
   id: string
   title: string
   description: string
-  audioUrl: string
-  imageUrl?: string
+  audioUrl: string | null
+  imageUrl?: string | null
 }
 
 const route = useRoute()
@@ -67,24 +66,15 @@ onMounted(async () => {
     const id = route.params.id as string
     const fetchedEpisode = await fetchEpisode(id)
     
-    console.log('Player page episode data:', {
-      id,
-      fetchedEpisode,
-      hasAudio: fetchedEpisode?.audioUrl ? true : false,
-      audioUrl: fetchedEpisode?.audioUrl
-    })
-
-    if (fetchedEpisode?.audioUrl) {
+    if (fetchedEpisode) {
       episode.value = {
         id: fetchedEpisode.id,
         title: fetchedEpisode.title || 'Untitled Episode',
         description: fetchedEpisode.description || 'Listen to this episode on Catechize',
         audioUrl: fetchedEpisode.audioUrl,
-        imageUrl: fetchedEpisode.imageUrl || undefined
+        imageUrl: fetchedEpisode.imageUrl
       }
     }
-
-    // CORS headers are now handled in nuxt.config.ts
   } catch (error) {
     console.error('Error fetching episode:', error)
   }

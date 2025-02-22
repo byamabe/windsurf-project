@@ -13,7 +13,7 @@ export const twitterConfig: TwitterConfig = {
 
   // Base URL for the player iframe
   // This will be used in twitter:player meta tag
-  playerBaseUrl: '/player',
+  playerBaseUrl: '/episodes',
 }
 
 // Types for Twitter Card meta tags
@@ -40,7 +40,7 @@ export function generateTwitterCardMeta(episode: {
     'twitter:site': twitterConfig.siteHandle,
     'twitter:title': episode.title,
     'twitter:description': episode.description,
-    'twitter:player': `${twitterConfig.playerBaseUrl}?episode=${episode.id}`,
+    'twitter:player': `${twitterConfig.siteUrl}${twitterConfig.playerBaseUrl}/${episode.id}-player`,
     'twitter:player:width': twitterConfig.player.width.toString(),
     'twitter:player:height': twitterConfig.player.height.toString(),
     ...(episode.imageUrl && { 'twitter:image': episode.imageUrl }),

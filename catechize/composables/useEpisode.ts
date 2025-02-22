@@ -34,11 +34,27 @@ export const useEpisode = () => {
   }
 
   const fetchEpisode = async (id: string): Promise<Episode> => {
+    console.log('Fetching episode:', id)
     const { data: episode, error } = await supabase
       .from('episodes')
       .select('*')
       .eq('id', id)
       .single()
+
+    console.log('Supabase response:', { episode, error })
+    
+    // Convert snake_case to camelCase
+    if (episode) {
+      episode.audioUrl = episode.audio_url
+      episode.videoUrl = episode.video_url
+      episode.imageUrl = episode.image_url
+      episode.publishedAt = episode.published_at
+      episode.podcastId = episode.podcast_id
+      episode.authorId = episode.author_id
+      episode.createdAt = episode.created_at
+      episode.updatedAt = episode.updated_at
+      episode.isPremium = episode.is_premium
+    }
 
     if (error) throw error
     return episode

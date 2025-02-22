@@ -10,6 +10,7 @@
       @progress="handleProgress"
       @waiting="isLoading = true"
       @canplay="isLoading = false"
+      @error="handleError"
     >
       Your browser does not support the audio element.
     </audio>
@@ -188,7 +189,7 @@ interface TimeRange {
   end: number
 }
 
-import { ref, onMounted, onUnmounted, defineExpose, defineEmits } from 'vue'
+import { ref, onMounted, onUnmounted, defineExpose, defineEmits, watch } from 'vue'
 import AudioWaveform from './AudioWaveform.vue'
 
 const props = defineProps<{
@@ -199,6 +200,9 @@ const props = defineProps<{
     label: string
   }>
 }>()
+
+// Debug logging
+console.log('AudioPlayer mounted with URL:', props.audioUrl)
 
 const emit = defineEmits<{
   (e: 'timeupdate', time: number): void
@@ -232,6 +236,16 @@ const closePopups = (event: MouseEvent) => {
 }
 
 onMounted(() => {
+  console.log('Creating audio element with URL:', props.audioUrl)
+  audioElement.value = new Audio(props.audioUrl)
+  audioElement.value.preload = 'metadata'
+  
+  // Add event listeners
+  audioElement.value.addEventListener('timeupdate', handleTimeUpdate)
+  audioElement.value.addEventListener('durationchange', handleDurationChange)
+  audioElement.value.addEventListener('ended', handleEnded)
+  audioElement.value.addEventListener('error', handleError)
+  
   document.addEventListener('click', closePopups)
   document.addEventListener('keydown', handleKeydown)
   if (audioElement.value) {
@@ -239,9 +253,21 @@ onMounted(() => {
   }
 })
 
+// Watch for URL changes
+watch(() => props.audioUrl, (newUrl) => {
+  console.log('Audio URL changed:', newUrl)
+  if (audioElement.value) {
+    audioElement.value.src = newUrl
+    audioElement.value.load()
+  }
+})
+
 onUnmounted(() => {
   if (audioElement.value) {
-    audioElement.value.pause()
+    audioElement.value.removeEventListener('timeupdate', handleTimeUpdate)
+    audioElement.value.removeEventListener('durationchange', handleDurationChange)
+    audioElement.value.removeEventListener('ended', handleEnded)
+    audioElement.value.removeEventListener('error', handleError)
   }
   document.removeEventListener('click', closePopups)
   document.removeEventListener('keydown', handleKeydown)
@@ -298,7 +324,9 @@ const togglePlay = () => {
     if (isPlaying.value) {
       audioElement.value.pause()
     } else {
-      audioElement.value.play()
+      audioElement.value.play().catch(error => {
+        console.error('Error playing audio:', error)
+      })
     }
     isPlaying.value = !isPlaying.value
   }
@@ -386,6 +414,24 @@ const seekTo = (time: number) => {
   if (audioElement.value) {
     audioElement.value.currentTime = time;
     currentTime.value = time;
+  }
+}
+
+const handleError = (event: Event) => {
+  console.error('Audio error:', event)
+}
+
+// Event handlers for duration change and ended events
+const handleDurationChange = () => {
+  if (audioElement.value) {
+    duration.value = audioElement.value.duration
+  }
+}
+
+const handleEnded = () => {
+  isPlaying.value = false
+  if (audioElement.value) {
+    audioElement.value.currentTime = 0
   }
 }
 
