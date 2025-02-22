@@ -44,12 +44,11 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEpisode } from '~/composables/useEpisode'
-import type { Episode } from '~/composables/useEpisode'
 import { twitterConfig } from '~/config/twitter'
 import TwitterCardPlayer from '~/components/TwitterCardPlayer.vue'
 
-// Types
-interface Episode {
+// Types for local use
+interface PlayerEpisode {
   id: string
   title: string
   description: string
@@ -59,7 +58,7 @@ interface Episode {
 
 const route = useRoute()
 const { fetchEpisode } = useEpisode()
-const episode = ref<Episode | null>(null)
+const episode = ref<PlayerEpisode | null>(null)
 const player = ref()
 
 // Fetch episode data
@@ -71,10 +70,10 @@ onMounted(async () => {
     if (fetchedEpisode) {
       episode.value = {
         id: fetchedEpisode.id,
-        title: fetchedEpisode.title,
+        title: fetchedEpisode.title || 'Untitled Episode',
         description: fetchedEpisode.description || 'Listen to this episode on Catechize',
         audioUrl: fetchedEpisode.audioUrl,
-        imageUrl: fetchedEpisode.imageUrl
+        imageUrl: fetchedEpisode.imageUrl || undefined
       }
     }
 
