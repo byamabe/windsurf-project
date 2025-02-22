@@ -27,21 +27,21 @@
     </div>
 
     <div>
-      <label for="audio_url" class="block text-sm font-medium text-gray-700">Audio URL</label>
+      <label for="audioUrl" class="block text-sm font-medium text-gray-700">Audio URL</label>
       <input
         type="url"
-        id="audio_url"
-        v-model="formData.audio_url"
+        id="audioUrl"
+        v-model="formData.audioUrl"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       />
     </div>
 
     <div>
-      <label for="video_url" class="block text-sm font-medium text-gray-700">Video URL</label>
+      <label for="videoUrl" class="block text-sm font-medium text-gray-700 mt-4">Video URL</label>
       <input
         type="url"
-        id="video_url"
-        v-model="formData.video_url"
+        id="videoUrl"
+        v-model="formData.videoUrl"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       />
     </div>
@@ -68,19 +68,18 @@
     </div>
 
     <div>
-      <label for="published_at" class="block text-sm font-medium text-gray-700">Publish Date</label>
+      <label for="publishedAt" class="block text-sm font-medium text-gray-700">Publish Date</label>
       <input
         type="datetime-local"
-        id="published_at"
-        v-model="formData.published_at"
+        id="publishedAt"
+        v-model="formData.publishedAt"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       />
     </div>
 
-    <div>
-      <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+    <div class="mt-4">
+      <label class="block text-sm font-medium text-gray-700">Status</label>
       <select
-        id="status"
         v-model="formData.status"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       >
@@ -90,18 +89,15 @@
       </select>
     </div>
 
-    <div class="relative flex items-start">
-      <div class="flex h-5 items-center">
+    <div class="mt-4">
+      <div class="flex items-center">
         <input
-          id="is_premium"
+          id="isPremium"
           type="checkbox"
-          v-model="formData.is_premium"
+          v-model="formData.isPremium"
           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         />
-      </div>
-      <div class="ml-3 text-sm">
-        <label for="is_premium" class="font-medium text-gray-700">Premium Episode</label>
-        <p class="text-gray-500">Make this episode available only to premium subscribers</p>
+        <label for="isPremium" class="ml-2 block text-sm text-gray-900">Premium Content</label>
       </div>
     </div>
 
@@ -127,16 +123,16 @@
 export interface EpisodeFormData {
   title: string
   description: string | null
-  audio_url: string | null
-  video_url: string | null
+  audioUrl: string | null
+  videoUrl: string | null
   transcript: string | null
-  published_at: string | null
+  publishedAt: string | null
   slug: string
   duration: number | null
-  podcast_id: string
+  podcastId: string
   status: 'draft' | 'published' | 'archived'
-  author_id: string
-  is_premium: boolean
+  authorId: string
+  isPremium: boolean
 }
 
 import { ref } from 'vue'
@@ -154,16 +150,16 @@ const emit = defineEmits<{
 const formData = ref<EpisodeFormData>({
   title: '',
   description: null,
-  audio_url: null,
-  video_url: null,
+  audioUrl: null,
+  videoUrl: null,
   transcript: null,
-  published_at: null,
+  publishedAt: null,
   slug: '',
   duration: null,
-  podcast_id: '',
+  podcastId: '',
   status: 'draft',
-  author_id: '',
-  is_premium: false,
+  authorId: '',
+  isPremium: false,
   ...props.initialData
 })
 

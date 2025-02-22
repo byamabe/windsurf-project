@@ -86,20 +86,15 @@ onMounted(() => {
 
 const handleSubmit = async (data: EpisodeFormData) => {
   const isPublished = data.status === 'published'
-  const episode: Omit<Episode, 'id' | 'created_at' | 'updated_at'> = {
+  const episode = {
     title: data.title,
     description: data.description,
-    audio_url: data.audio_url,
-    video_url: data.video_url,
-    transcript: data.transcript,
-    slug: data.slug,
-    duration: data.duration,
-    podcast_id: data.podcast_id,
-    status: data.status,
-    is_premium: data.is_premium,
-    published_at: isPublished ? new Date().toISOString() : null,
-    published: isPublished,
-    author_id: user.value?.id || ''
+    audioUrl: data.audioUrl,
+    videoUrl: data.videoUrl,
+    podcastId: route.params.podcastId as string,
+    status: isPublished ? 'published' : 'draft',
+    authorId: user.value?.id || '',
+    isPremium: data.isPremium || false
   }
   
   await useEpisode().createEpisode(episode)
