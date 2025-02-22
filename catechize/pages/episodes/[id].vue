@@ -12,8 +12,9 @@
         </div>
 
         <!-- Player Section -->
-        <div class="sticky top-16 z-40 bg-gray-900">
-          <div v-if="episode.videoUrl" class="mb-4 rounded-lg shadow-xl">
+        <div class="sticky top-16 z-40 bg-gray-900 p-4 rounded-lg shadow-lg">
+          <!-- Video Player -->
+          <div v-if="episode.videoUrl" class="mb-4">
             <YouTubeEmbed
               v-if="isYouTubeUrl(episode.videoUrl)"
               :video-url="episode.videoUrl"
@@ -29,18 +30,15 @@
               ref="videoRef"
               @timeupdate="(e: Event) => {
                 const target = e.target as HTMLVideoElement;
-                if (target) {
-                  handleTimeUpdate(target.currentTime);
-                }
+                handleTimeUpdate(target.currentTime);
               }"
-            >
-              Your browser does not support the video element.
-            </video>
+            />
           </div>
 
+          <!-- Audio Player -->
           <div v-if="episode.audioUrl" class="mb-4">
-            <AudioPlayer 
-              :audio-url="episode.audioUrl" 
+            <AudioPlayer
+              :audio-url="episode.audioUrl"
               ref="audioRef"
               @timeupdate="handleTimeUpdate"
             />
@@ -87,10 +85,11 @@
 import { ref, onMounted } from 'vue'
 import type { Episode } from '~/composables/useEpisode'
 import { useTwitterCard } from '~/composables/useTwitterCard'
+import AudioPlayer from '~/components/AudioPlayer.vue'
+import YouTubeEmbed from '~/components/YouTubeEmbed.vue'
 
 const route = useRoute()
 const { fetchEpisode } = useEpisode()
-
 const episode = ref<Episode | null>(null)
 const loading = ref(true)
 const videoRef = ref<HTMLVideoElement | null>(null)
