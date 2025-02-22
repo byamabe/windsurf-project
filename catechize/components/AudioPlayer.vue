@@ -193,7 +193,11 @@ import AudioWaveform from './AudioWaveform.vue'
 
 const props = defineProps<{
   audioUrl: string
-  timeRanges?: TimeRange[]
+  timeRanges?: Array<{
+    start: number
+    end: number
+    label: string
+  }>
 }>()
 
 const emit = defineEmits<{
@@ -276,7 +280,7 @@ const seek = (time: TimeRange) => {
   emit('seeked', time)
 }
 
-const timeRanges = ref<TimeRange[]>(props.timeRanges || [])
+const timeRanges = ref(props.timeRanges || [])
 
 const formatTime = (time: number): string => {
   const hours = Math.floor(time / 3600)

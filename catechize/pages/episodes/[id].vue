@@ -149,17 +149,25 @@ onMounted(async () => {
     const config = useRuntimeConfig()
     const baseUrl = config.public.siteUrl || 'https://catechize.org'
     
-    updateTwitterCard({
-      title: episode.value.title,
-      description: episode.value.description || 'Listen to this episode on Catechize',
-      image: episode.value.imageUrl || `${baseUrl}/images/hero-bg.jpg`,
-      player: episode.value.audioUrl ? {
-        url: `${baseUrl}/player/${id}`,
-        width: 435,
-        height: 251,
-        audio: episode.value.audioUrl
-      } : undefined
-    })
+    if (episode.value?.audioUrl) {
+      updateTwitterCard({
+        title: episode.value.title || 'Untitled Episode',
+        description: episode.value.description || 'Listen to this episode on Catechize',
+        image: episode.value.imageUrl || `${baseUrl}/images/hero-bg.jpg`,
+        player: {
+          url: `${baseUrl}/player/${id}`,
+          width: 435,
+          height: 251,
+          audio: episode.value.audioUrl
+        }
+      })
+    } else {
+      updateTwitterCard({
+        title: episode.value?.title || 'Untitled Episode',
+        description: episode.value?.description || 'Listen to this episode on Catechize',
+        image: episode.value?.imageUrl || `${baseUrl}/images/hero-bg.jpg`
+      })
+    }
   } catch (error) {
     console.error('Error fetching episode:', error)
   } finally {
