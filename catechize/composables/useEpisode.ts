@@ -63,31 +63,83 @@ export const useEpisode = () => {
   const createEpisode = async (episode: Omit<Episode, 'id' | 'created_at' | 'updated_at'>): Promise<Episode> => {
     if (!user.value) throw new Error('User must be logged in to create an episode')
 
+    // Convert camelCase to snake_case for Supabase
+    const dbEpisode = {
+      title: episode.title,
+      description: episode.description,
+      audio_url: episode.audioUrl,
+      video_url: episode.videoUrl,
+      image_url: episode.imageUrl,
+      published_at: episode.publishedAt,
+      is_premium: episode.isPremium ?? false,
+      podcast_id: episode.podcastId,
+      status: episode.status || 'draft',
+      author_id: user.value.id,
+      transcript: episode.transcript,
+      slug: episode.slug
+    }
+
     const { data, error } = await supabase
       .from('episodes')
-      .insert({
-        ...episode,
-        author_id: user.value.id,
-        status: 'draft',
-        is_premium: false
-      })
+      .insert(dbEpisode)
       .select()
       .single()
 
     if (error) throw error
-    return data
+
+    // Convert snake_case back to camelCase for frontend
+    return {
+      ...data,
+      audioUrl: data.audio_url,
+      videoUrl: data.video_url,
+      imageUrl: data.image_url,
+      publishedAt: data.published_at,
+      podcastId: data.podcast_id,
+      authorId: data.author_id,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      isPremium: data.is_premium
+    }
   }
 
-  const updateEpisode = async (id: string, updates: Partial<Omit<Episode, 'id' | 'created_at' | 'updated_at'>>): Promise<Episode> => {
+  const updateEpisode = async (id: string, episode: Partial<Omit<Episode, 'id' | 'created_at' | 'updated_at'>>): Promise<Episode> => {
+    // Convert camelCase to snake_case for Supabase
+    const dbUpdates: Record<string, any> = {}
+    
+    if (episode.title !== undefined) dbUpdates.title = episode.title
+    if (episode.description !== undefined) dbUpdates.description = episode.description
+    if (episode.audioUrl !== undefined) dbUpdates.audio_url = episode.audioUrl
+    if (episode.videoUrl !== undefined) dbUpdates.video_url = episode.videoUrl
+    if (episode.imageUrl !== undefined) dbUpdates.image_url = episode.imageUrl
+    if (episode.publishedAt !== undefined) dbUpdates.published_at = episode.publishedAt
+    if (episode.isPremium !== undefined) dbUpdates.is_premium = episode.isPremium
+    if (episode.podcastId !== undefined) dbUpdates.podcast_id = episode.podcastId
+    if (episode.status !== undefined) dbUpdates.status = episode.status
+    if (episode.transcript !== undefined) dbUpdates.transcript = episode.transcript
+    if (episode.slug !== undefined) dbUpdates.slug = episode.slug
+
     const { data, error } = await supabase
       .from('episodes')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single()
 
     if (error) throw error
-    return data
+
+    // Convert snake_case back to camelCase for frontend
+    return {
+      ...data,
+      audioUrl: data.audio_url,
+      videoUrl: data.video_url,
+      imageUrl: data.image_url,
+      publishedAt: data.published_at,
+      podcastId: data.podcast_id,
+      authorId: data.author_id,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      isPremium: data.is_premium
+    }
   }
 
   const deleteEpisode = async (id: string): Promise<void> => {
