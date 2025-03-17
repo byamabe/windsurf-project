@@ -24,41 +24,80 @@ export const useEpisode = () => {
   const user = useSupabaseUser()
 
   const fetchEpisodes = async (podcastId: string): Promise<Episode[]> => {
-    const { data: episodes, error } = await supabase
-      .from('episodes')
-      .select('*')
-      .eq('podcast_id', podcastId)
-      .order('created_at', { ascending: false })
+    try {
+      const { data: episodes, error } = await supabase
+        .from('episodes')
+        .select('*')
+        .eq('podcast_id', podcastId)
+        .order('created_at', { ascending: false })
 
-    if (error) throw error
-    return episodes
+      if (error) {
+        console.error('Error fetching episodes:', error)
+        throw error
+      }
+
+      // Convert snake_case to camelCase for frontend
+      return episodes.map(episode => ({
+        id: episode.id,
+        title: episode.title,
+        description: episode.description,
+        audioUrl: episode.audio_url,
+        videoUrl: episode.video_url,
+        publishedAt: episode.published_at,
+        isPremium: episode.is_premium,
+        podcastId: episode.podcast_id,
+        status: episode.status,
+        authorId: episode.author_id,
+        transcript: episode.transcript,
+        slug: episode.slug,
+        duration: episode.duration,
+        createdAt: episode.created_at,
+        updatedAt: episode.updated_at
+      }))
+    } catch (error) {
+      console.error('Error fetching episodes:', error)
+      throw error
+    }
   }
 
   const fetchEpisode = async (id: string): Promise<Episode> => {
-    console.log('Fetching episode:', id)
-    const { data: episode, error } = await supabase
-      .from('episodes')
-      .select('*')
-      .eq('id', id)
-      .single()
+    try {
+      console.log('Fetching episode:', id)
+      const { data: episode, error } = await supabase
+        .from('episodes')
+        .select('*')
+        .eq('id', id)
+        .single()
 
-    console.log('Supabase response:', { episode, error })
-    
-    // Convert snake_case to camelCase
-    if (episode) {
-      episode.audioUrl = episode.audio_url
-      episode.videoUrl = episode.video_url
-      episode.imageUrl = episode.image_url
-      episode.publishedAt = episode.published_at
-      episode.podcastId = episode.podcast_id
-      episode.authorId = episode.author_id
-      episode.createdAt = episode.created_at
-      episode.updatedAt = episode.updated_at
-      episode.isPremium = episode.is_premium
+      if (error) {
+        console.error('Error fetching episode:', error)
+        throw error
+      }
+
+      console.log('Supabase response:', { episode })
+      
+      // Convert snake_case to camelCase
+      return {
+        id: episode.id,
+        title: episode.title,
+        description: episode.description,
+        audioUrl: episode.audio_url,
+        videoUrl: episode.video_url,
+        publishedAt: episode.published_at,
+        isPremium: episode.is_premium,
+        podcastId: episode.podcast_id,
+        status: episode.status,
+        authorId: episode.author_id,
+        transcript: episode.transcript,
+        slug: episode.slug,
+        duration: episode.duration,
+        createdAt: episode.created_at,
+        updatedAt: episode.updated_at
+      }
+    } catch (error) {
+      console.error('Error fetching episode:', error)
+      throw error
     }
-
-    if (error) throw error
-    return episode
   }
 
   const createEpisode = async (episode: Omit<Episode, 'id' | 'created_at' | 'updated_at'>): Promise<Episode> => {
@@ -128,35 +167,48 @@ export const useEpisode = () => {
     if (episode.description !== undefined) dbUpdates.description = episode.description
     if (episode.audioUrl !== undefined) dbUpdates.audio_url = episode.audioUrl
     if (episode.videoUrl !== undefined) dbUpdates.video_url = episode.videoUrl
-    if (episode.imageUrl !== undefined) dbUpdates.image_url = episode.imageUrl
     if (episode.publishedAt !== undefined) dbUpdates.published_at = episode.publishedAt
     if (episode.isPremium !== undefined) dbUpdates.is_premium = episode.isPremium
     if (episode.podcastId !== undefined) dbUpdates.podcast_id = episode.podcastId
     if (episode.status !== undefined) dbUpdates.status = episode.status
     if (episode.transcript !== undefined) dbUpdates.transcript = episode.transcript
     if (episode.slug !== undefined) dbUpdates.slug = episode.slug
+    if (episode.duration !== undefined) dbUpdates.duration = episode.duration || undefined
 
-    const { data, error } = await supabase
-      .from('episodes')
-      .update(dbUpdates)
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('episodes')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select()
+        .single()
 
-    if (error) throw error
+      if (error) {
+        console.error('Error updating episode:', error)
+        throw error
+      }
 
-    // Convert snake_case back to camelCase for frontend
-    return {
-      ...data,
-      audioUrl: data.audio_url,
-      videoUrl: data.video_url,
-      imageUrl: data.image_url,
-      publishedAt: data.published_at,
-      podcastId: data.podcast_id,
-      authorId: data.author_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-      isPremium: data.is_premium
+      // Convert snake_case back to camelCase for frontend
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        audioUrl: data.audio_url,
+        videoUrl: data.video_url,
+        publishedAt: data.published_at,
+        isPremium: data.is_premium,
+        podcastId: data.podcast_id,
+        status: data.status,
+        authorId: data.author_id,
+        transcript: data.transcript,
+        slug: data.slug,
+        duration: data.duration,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      }
+    } catch (error) {
+      console.error('Error updating episode:', error)
+      throw error
     }
   }
 
