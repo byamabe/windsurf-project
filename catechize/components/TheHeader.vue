@@ -248,48 +248,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useSupabaseClient, useSupabaseUser } from '#imports'
+
+interface Profile {
+  id: string
+  display_name?: string
+  avatar_url?: string
+}
+
+interface Role {
+  id: string
+  name: string
+}
 
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
-const loading = ref(true)
-
-interface Profile {
-  avatar_url: string | null
-  display_name: string
-}
-
 const profile = ref<Profile | null>(null)
+const userRoles = ref<Role[]>([])
+
+const isAdminUser = computed(() => {
+  return userRoles.value.some(role => role.name === 'admin')
+})
 
 watch(user, async () => {
   if (user.value) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('avatar_url, display_name')
-      .eq('user_id', user.value.id)
-      .single()
+    try {
+      // Fetch profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.value.id)
+        .single()
 
-    if (!error && data) {
-      profile.value = data
+      if (profileError) throw profileError
+      profile.value = profileData
+
+      // Fetch user roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select(`
+          role:roles (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', user.value.id)
+
+      if (rolesError) throw rolesError
+      userRoles.value = rolesData.map(r => r.role)
+    } catch (error) {
+      console.error('Error fetching user data:', error)
     }
   } else {
     profile.value = null
+    userRoles.value = []
   }
 }, { immediate: true })
-
-onMounted(async () => {
-  try {
-    const { data: { user: currentUser } } = await supabase.auth.getUser()
-    if (currentUser) {
-      user.value = currentUser
-    }
-  } catch (error) {
-    console.error('Error fetching user:', error)
-  } finally {
-    loading.value = false
-  }
-})
 
 const handleSignOut = async () => {
   try {
@@ -304,7 +319,6 @@ const showLoginModal = ref(false)
 const showSignupModal = ref(false)
 const isMobileMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
-const isAdminUser = ref(false)
 
 const handleLogout = async () => {
   try {
@@ -313,6 +327,7 @@ const handleLogout = async () => {
     
     // Clear user state
     profile.value = null
+    userRoles.value = []
     isUserMenuOpen.value = false
     
   } catch (error) {
