@@ -213,6 +213,40 @@ For reproducibility and to avoid conflicts, migrations should be run in this ord
 
 This ensures a clean, reproducible state and avoids any conflicts from incremental changes.
 
+### Admin Form Improvements (2025-03-17 17:00 PST)
+#### Fixed Form Data Loading Issues
+- Fixed blank form issues when editing existing content:
+  - `pages/admin/episodes/[episodeId].vue`: Updated prop from `:episode` to `:initial-data`
+  - `pages/admin/podcasts/[id].vue`: Updated prop from `:podcast` to `:initial-data`
+
+#### Technical Implementation
+- Aligned form component prop names with their expected APIs
+- Verified data flow from Supabase through to form components
+- Ensured proper TypeScript types for form data
+
+#### Build Verification
+- Ran `npm run build` locally before committing changes
+- Build passed successfully with no errors
+- Verified changes in development environment
+- Committed only after successful local build
+
+#### Technical Decisions
+1. Form Component Props:
+   - Changed to use `:initial-data` consistently across forms
+   - Chosen to match existing component API design
+   - Improves code consistency and maintainability
+   - Reduces potential for similar bugs in future forms
+
+#### Known Issues
+- No remaining issues with admin form data loading
+- All builds passing successfully
+
+#### Next Steps
+- Continue implementing content analytics features
+- Add listener statistics tracking
+- Implement engagement metrics
+- Create download reports functionality
+
 ## Latest Updates (2024-12-14)
 
 ### Episode Management Improvements
@@ -260,6 +294,25 @@ This ensures a clean, reproducible state and avoids any conflicts from increment
 4. Add proper error boundaries and loading states
 5. Document the new type system and component patterns
 
+## 2025-02-21
+
+### Twitter Audio Card Integration Investigation
+
+#### Attempted Approach
+- Tried implementing Twitter Player Card for audio episodes
+- Added required meta tags including twitter:player, twitter:player:stream, etc.
+- Added twitter:site meta tag and other required fields
+- Used absolute URLs for player and audio sources
+
+#### Findings
+- Twitter Player Card does not fully support audio-only content
+- While documentation mentions "audio" alongside video, all examples and implementation details focus on video players
+- Major audio platforms (SoundCloud, Spotify) use Summary Cards with Large Image instead of Player Cards
+- Twitter's policy states "Player Cards are reserved for linear audio and video consumption only" but practical implementation appears to be video-focused
+
+#### Recommendation
+Use Summary Card with Large Image (twitter:card="summary_large_image") for audio episodes instead of attempting to implement a player card. This is the approach used by major audio platforms and is more reliable.
+
 ## 2025-02-15
 
 ### TypeScript and Deployment Improvements
@@ -281,6 +334,30 @@ This ensures a clean, reproducible state and avoids any conflicts from increment
 - Monitor Netlify deployment for any runtime issues
 - Consider addressing duplicate Pinia imports if they cause performance issues
 - Continue maintaining strict TypeScript compliance for new features
+
+## Session Updates
+
+### February 15, 2025 - 14:00 PST
+#### Completed:
+- Reviewed and organized project TODOs
+- Added comprehensive testing, documentation, and performance optimization tasks
+- Reorganized Twitter Card Integration tasks with clear priorities
+- Updated technical.md with detailed next steps for Twitter Card implementation
+
+#### Next Steps:
+1. Domain and SSL Setup (Highest Priority)
+   - Register a permanent domain name
+   - Configure DNS settings
+   - Set up SSL certificate for the domain
+   - Update Netlify deployment with custom domain
+
+2. Twitter Developer Platform Setup
+   - Create Twitter Developer account at developer.twitter.com
+   - Create Project and App in developer portal
+   - Request elevated access for Player Card functionality
+   - Set up API credentials
+
+These are critical path items that must be completed before we can proceed with Twitter Card implementation. The domain needs to be secured with HTTPS before Twitter will whitelist it for Player Card functionality.
 
 ## Admin Setup
 
@@ -408,41 +485,152 @@ This method ensures clean migration state and proper reapplication of schema and
 
 ## Todo
 ### High Priority
-- [ ] Integrate real Supabase data into the landing page components:
+1. Site Preview Image
+   - Design compelling hero/social image for the main site
+   - Include Catechize branding and value proposition
+   - Optimize dimensions for Twitter/social media preview
+   - Replace current hero-bg.jpg with properly designed image
+   - Test preview across different social platforms
+
+2. Twitter Card Enhancements
+   - Switch to Summary Card with Large Image for audio episodes
+   - Create custom preview image for episodes without artwork
+   - Add compelling episode descriptions
+   - Test card preview across different Twitter clients
+
+### Type System and Error Handling
+- Integrate real Supabase data into the landing page components:
   - Featured Podcasts
   - Latest Episodes
   - Popular in Loci
-  - Top Authors
+  - Featured Questions
   - Trending Questions
-- [ ] Migrate from Nuxt 3 to Nuxt 4
-- [ ] Set up source control
-  - [ ] Initialize Git repository
-  - [ ] Set up .gitignore for Nuxt, Node, and environment files
-  - [ ] Create main/development branch structure
-  - [ ] Add README.md with project setup instructions
-- [ ] Configure deployment
-  - [ ] Set up Netlify account and project
-  - [ ] Configure environment variables for Supabase
-  - [ ] Set up continuous deployment from main branch
-  - [ ] Configure preview deployments for pull requests
+- Migrate from Nuxt 3 to Nuxt 4
+- Set up source control
+  - Initialize Git repository
+  - Set up .gitignore for Nuxt, Node, and environment files
+  - Create main/development branch structure
+  - Add README.md with project setup instructions
+- Configure deployment
+  - Set up Netlify account and project
+  - Configure environment variables for Supabase
+  - Set up continuous deployment from main branch
+  - Configure preview deployments for pull requests
 
 ### Features & Improvements
-- [ ] Add error handling for Supabase data fetching
-- [ ] Implement loading states for data fetching
-- [ ] Add TypeScript types for all data models
-- [ ] Set up proper data caching strategy
+- Add error handling for Supabase data fetching
+- Implement loading states for data fetching
+- Add TypeScript types for all data models
+- Set up proper data caching strategy
 
 ### Testing & Documentation
-- [ ] Add unit tests for composables
-- [ ] Add end-to-end tests for critical user flows
-- [ ] Document Supabase schema and relationships
-- [ ] Add API documentation for composables
+- Add unit tests for composables
+- Add end-to-end tests for critical user flows
+- Document Supabase schema and relationships
+- Add API documentation for composables
 
 ### Performance & Security
-- [ ] Implement proper authentication flow
-- [ ] Set up role-based access control
-- [ ] Add rate limiting for API calls
-- [ ] Optimize image loading and caching
+- Implement proper authentication flow
+- Set up role-based access control
+- Add rate limiting for API calls
+- Optimize image loading and caching
+
+## Archived Progress
+- [January 2025](docs/archive/2025-01-progress.md)
+
+## Archived Items
+
+### Todo
+### High Priority
+1. Site Preview Image
+   - Design compelling hero/social image for the main site
+   - Include Catechize branding and value proposition
+   - Optimize dimensions for Twitter/social media preview
+   - Replace current hero-bg.jpg with properly designed image
+   - Test preview across different social platforms
+
+2. Twitter Card Enhancements
+   - Switch to Summary Card with Large Image for audio episodes
+   - Create custom preview image for episodes without artwork
+   - Add compelling episode descriptions
+   - Test card preview across different Twitter clients
+
+### Type System and Error Handling
+- Integrate real Supabase data into the landing page components:
+  - Featured Podcasts
+  - Latest Episodes
+  - Popular in Loci
+  - Featured Questions
+  - Trending Questions
+- Migrate from Nuxt 3 to Nuxt 4
+- Set up source control
+  - Initialize Git repository
+  - Set up .gitignore for Nuxt, Node, and environment files
+  - Create main/development branch structure
+  - Add README.md with project setup instructions
+- Configure deployment
+  - Set up Netlify account and project
+  - Configure environment variables for Supabase
+  - Set up continuous deployment from main branch
+  - Configure preview deployments for pull requests
+
+### Features & Improvements
+- Add error handling for Supabase data fetching
+- Implement loading states for data fetching
+- Add TypeScript types for all data models
+- Set up proper data caching strategy
+
+### Testing & Documentation
+- Add unit tests for composables
+- Add end-to-end tests for critical user flows
+- Document Supabase schema and relationships
+- Add API documentation for composables
+
+### Performance & Security
+- Implement proper authentication flow
+- Set up role-based access control
+- Add rate limiting for API calls
+- Optimize image loading and caching
+
+## Development Workflow
+
+### Local Development
+1. All development work should first be done locally:
+   - Run the development server locally using `npm run dev`
+   - Make and test changes in the local environment
+   - Verify functionality in local browser at `localhost:3000`
+
+### Testing and Quality Assurance
+1. Before pushing to production:
+   - Run all tests locally
+   - Check for TypeScript errors
+   - Verify changes work across different browsers
+   - Test responsive design using browser dev tools
+
+### Deployment Process
+1. Push changes to GitHub:
+   - Commit changes with clear, descriptive messages
+   - Push to the main branch
+
+2. Netlify Deployment:
+   - Netlify will automatically deploy changes from the main branch
+   - Monitor the deployment in Netlify dashboard
+   - Verify changes on the production site
+   - Check SSL/HTTPS is working correctly
+
+### Best Practices
+- Never make direct changes to production
+- Use feature branches for significant changes
+- Test thoroughly in local environment
+- Monitor Netlify deployment logs for any issues
+- Keep local dependencies in sync with production
+
+### Local Development Notes
+- For Supabase authentication to work properly in local development:
+  - Use `http://localhost.localtest.me:3000` instead of `http://localhost:3000`
+  - This is because Supabase cookies require a proper domain (not just localhost) for security
+  - `localtest.me` is a special domain that always resolves to 127.0.0.1
+  - This ensures consistent cookie behavior between local development and production
 
 ## Notes
 This file will be updated throughout development to maintain a clear record of:
@@ -452,9 +640,3 @@ This file will be updated throughout development to maintain a clear record of:
 - Project structure changes
 - Important bug fixes
 - Feature additions
-
-
-## Archived Progress
-- [January 2025](docs/archive/2025-01-progress.md)
-
-## Archived Items
