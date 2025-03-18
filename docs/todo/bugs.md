@@ -12,7 +12,14 @@ No medium-priority bugs currently identified.
 No low-priority bugs currently identified.
 
 ## Recently Fixed
-List of recently fixed bugs will be added here.
+1. **Admin Form Data Loading** (Fixed: March 17, 2025)
+   - Issue: Episode and Podcast edit forms were blank when editing existing content
+   - Root Cause: Incorrect prop names being passed to form components
+   - Fix: Updated prop names from `:episode`/`:podcast` to `:initial-data` in:
+     - `pages/admin/episodes/[episodeId].vue`
+     - `pages/admin/podcasts/[id].vue`
+   - Commits: 15e3f3b, c002c6b
+   - Verified: Build passes successfully
 
 ## Bug Report Template
 
