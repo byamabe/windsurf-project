@@ -17,7 +17,7 @@
 
     <div v-else-if="podcast" class="mt-8">
       <PodcastForm
-        :podcast="podcast"
+        :initial-data="podcast"
         @submit="handleSubmit"
         @cancel="navigateBack"
       />
