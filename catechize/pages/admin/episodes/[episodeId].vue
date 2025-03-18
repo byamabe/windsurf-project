@@ -20,7 +20,7 @@
       <EpisodeForm
         :podcast-id="episode?.podcastId ?? ''"
         :podcast-title="podcast?.title ?? ''"
-        :episode="episode"
+        :initial-data="episode"
         @submit="handleSubmit"
         @cancel="navigateBack"
       />
