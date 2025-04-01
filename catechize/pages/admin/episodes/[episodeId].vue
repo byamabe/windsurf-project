@@ -20,7 +20,10 @@
       <EpisodeForm
         :podcast-id="episode?.podcastId ?? ''"
         :podcast-title="podcast?.title ?? ''"
-        :initial-data="episode"
+        :initial-data="episode ? {
+          ...episode,
+          duration: episode.duration?.toString()
+        } : undefined"
         @submit="handleSubmit"
         @cancel="navigateBack"
       />
