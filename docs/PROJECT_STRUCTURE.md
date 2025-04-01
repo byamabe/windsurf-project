@@ -92,6 +92,26 @@ If considering migrating from nested to flat structure:
 - Document structure decisions
 - Create project templates
 
+## Build Process Best Practices
+
+1. **Pre-Commit Verification**
+   - ✅ Run `npm run build` manually before committing
+   - ✅ Fix any errors immediately while context is fresh
+   - ✅ Stage and commit only after successful build
+   - ❌ Don't rely solely on pre-commit hook
+
+2. **Pre-Commit Hook (Safety Net)**
+   - Acts as a final verification
+   - Prevents accidental broken builds
+   - Not a replacement for manual testing
+   - May interrupt commit flow if issues found
+
+3. **Why Both?**
+   - Manual build: Immediate feedback, maintain flow
+   - Pre-commit hook: Catch anything missed
+   - Better developer experience
+   - Faster issue resolution
+
 ## Questions to Ask
 
 When starting a new project:
