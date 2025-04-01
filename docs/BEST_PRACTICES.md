@@ -170,6 +170,50 @@ project-root/
 - Access control
 - Audit logging
 
+### Edge-Level Security Rules
+
+When deploying to Netlify or similar platforms, implement security rules at the edge level to block potentially malicious requests before they reach your application:
+
+1. Block PHP Access Attempts
+```toml
+# Block PHP files and common attack patterns
+[[redirects]]
+  from = "/*.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/index.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*/index.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.php?*"
+  to = "/404.html"
+  status = 404
+  force = true
+```
+
+Key principles:
+- Place security rules before the SPA catch-all rule
+- Use `force = true` to prevent rule bypassing
+- Return proper status codes (e.g., 404 for blocked requests)
+- Handle both direct file requests and requests with query parameters
+
+Benefits:
+- Blocks malicious requests at the edge
+- Reduces server load
+- Prevents application-level warnings
+- Improves security logging and monitoring
+
 ## Performance
 
 ### Frontend
