@@ -43,22 +43,57 @@ project-root/
 ## Type Safety
 
 ### Database Types
-- Single source of truth in `types/database.ts`
-- Match database column names (snake_case)
-- Export clear interfaces
-- Document schema relationships
+```typescript
+// types/database.ts
+export interface DatabaseEpisode {
+  id: string;
+  title: string;
+  duration: string;  // Store as string for compatibility
+  created_at: string;
+  // ...
+}
+
+// Consistent usage in queries
+const { data: episodes } = await supabase
+  .from('episodes')
+  .select<DatabaseEpisode>('*')
+```
 
 ### Type Conversion
-- Define conversion utilities in `types/index.ts`
-- Handle camelCase/snake_case consistently
-- Use TypeScript utility types
-- Document complex transformations
+```typescript
+// types/index.ts
+export interface Episode {
+  id: string;
+  title: string;
+  duration?: string;
+  createdAt: string;  // Converted to camelCase
+}
+
+// utils/conversion.ts
+export function convertDatabaseEpisode(db: DatabaseEpisode): Episode {
+  return {
+    id: db.id,
+    title: db.title,
+    duration: db.duration,
+    createdAt: db.created_at
+  };
+}
+```
 
 ### Form Types
-- Component-specific interfaces
-- Explicit nullable fields
-- Clear default values
-- Validate against database types
+```typescript
+// components/EpisodeForm.vue
+export interface EpisodeFormData {
+  title: string;
+  duration?: string;  // Optional but type-safe
+  // ...
+}
+
+const formData = ref<EpisodeFormData>({
+  title: props.initialData?.title ?? '',
+  duration: props.initialData?.duration
+});
+```
 
 [More details](./TYPE_SYSTEM.md)
 
@@ -152,11 +187,138 @@ project-root/
 
 ## Security
 
-### Authentication
-- Secure session handling
-- CSRF protection
-- Rate limiting
-- Password policies
+### Edge-Level Security
+
+We implement multiple layers of security at the edge level to protect against common attacks:
+
+1. **Rate Limiting**
+```typescript
+// netlify/edge-functions/security.ts
+const RATE_LIMIT = 60;  // requests per minute
+const BLOCK_DURATION = 300;  // 5 minutes block for violations
+```
+
+2. **Request Filtering**
+```toml
+# netlify.toml
+[[redirects]]
+  from = "/index.php*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/Special:*"
+  to = "/404.html"
+  status = 404
+  force = true
+```
+
+3. **Security Headers**
+```toml
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Content-Security-Policy = "default-src 'self'..."
+```
+
+### Implementation Details
+
+1. **Bot Protection**
+   - Pattern-based detection
+   - Rate limiting per IP
+   - Automatic blocking of suspicious IPs
+   - MediaWiki/WordPress probe blocking
+
+2. **Spam Prevention**
+   - Keyword filtering
+   - URL pattern matching
+   - Request rate analysis
+   - Automated blocking
+
+3. **Headers and Policies**
+   - Frame protection (clickjacking prevention)
+   - XSS protection
+   - Content type enforcement
+   - Strict referrer policy
+   - Limited permissions
+
+### Maintenance
+
+1. **Regular Updates**
+   - Monitor attack patterns in logs
+   - Update bot patterns and keywords
+   - Adjust rate limits if needed
+   - Review blocked IPs
+
+2. **Monitoring**
+   - Check Netlify function logs
+   - Review rate limit triggers
+   - Monitor for false positives
+   - Track blocked request patterns
+
+### Best Practices
+
+1. **Development**
+   - Test rate limits in staging
+   - Verify legitimate paths aren't blocked
+   - Monitor performance impact
+   - Document security changes
+
+2. **Deployment**
+   - Deploy security changes gradually
+   - Monitor for unintended blocks
+   - Have rollback plan ready
+   - Test all redirects
+
+3. **Maintenance**
+   - Keep spam keywords current
+   - Update bot patterns regularly
+   - Review rate limit thresholds
+   - Document new attack patterns
+
+### Edge-Level Security Rules
+Currently implemented in `netlify.toml`:
+```toml
+[[redirects]]
+  from = "/*.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/index.php"
+  to = "/404.html"
+  status = 404
+  force = true
+```
+
+### API Security
+```typescript
+// server/api/episodes/[id].get.ts
+export default defineEventHandler(async (event) => {
+  // Validate user session
+  const user = await requireAuth(event);
+  
+  // Validate and sanitize params
+  const id = getRouterParam(event, 'id');
+  if (!id) {
+    throw createError({
+      statusCode: 400,
+      message: 'Episode ID is required'
+    });
+  }
+
+  // Use type-safe database queries
+  const { data, error } = await supabase
+    .from('episodes')
+    .select<DatabaseEpisode>('*')
+    .eq('id', id)
+    .single();
+});
+```
 
 ### Data Protection
 - Input validation
@@ -170,63 +332,59 @@ project-root/
 - Access control
 - Audit logging
 
-### Edge-Level Security Rules
-
-When deploying to Netlify or similar platforms, implement security rules at the edge level to block potentially malicious requests before they reach your application:
-
-1. Block PHP Access Attempts
-```toml
-# Block PHP files and common attack patterns
-[[redirects]]
-  from = "/*.php"
-  to = "/404.html"
-  status = 404
-  force = true
-
-[[redirects]]
-  from = "/index.php"
-  to = "/404.html"
-  status = 404
-  force = true
-
-[[redirects]]
-  from = "/*/index.php"
-  to = "/404.html"
-  status = 404
-  force = true
-
-[[redirects]]
-  from = "/*.php?*"
-  to = "/404.html"
-  status = 404
-  force = true
-```
-
-Key principles:
-- Place security rules before the SPA catch-all rule
-- Use `force = true` to prevent rule bypassing
-- Return proper status codes (e.g., 404 for blocked requests)
-- Handle both direct file requests and requests with query parameters
-
-Benefits:
-- Blocks malicious requests at the edge
-- Reduces server load
-- Prevents application-level warnings
-- Improves security logging and monitoring
-
 ## Performance
 
-### Frontend
-- Code splitting
-- Lazy loading
-- Asset optimization
-- Cache strategies
+### Frontend Optimization
+Currently implemented:
+```typescript
+// nuxt.config.ts
+export default defineNuxtConfig({
+  // Image optimization
+  image: {
+    provider: 'ipx',
+    presets: {
+      thumbnail: {
+        modifiers: {
+          width: 200,
+          height: 200,
+          format: 'webp'
+        }
+      }
+    }
+  },
 
-### Backend
-- Query optimization
-- Connection pooling
-- Caching layers
-- Load balancing
+  // Bundle optimization
+  nitro: {
+    minify: true,
+    compressPublicAssets: true
+  }
+});
+
+// components/LazyImage.vue
+<template>
+  <NuxtImg
+    :src="props.src"
+    :preset="props.preset"
+    loading="lazy"
+    decoding="async"
+  />
+</template>
+```
+
+### Database Optimization
+Currently using:
+```sql
+-- Indexes for common queries
+CREATE INDEX idx_episodes_podcast_id ON episodes(podcast_id);
+CREATE INDEX idx_episodes_published_at ON episodes(published_at);
+
+-- Efficient joins
+SELECT e.*, p.title as podcast_title
+FROM episodes e
+JOIN podcasts p ON e.podcast_id = p.id
+WHERE e.status = 'published'
+LIMIT 10;
+```
 
 ### Monitoring
 - Error tracking

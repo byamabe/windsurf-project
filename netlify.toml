@@ -6,15 +6,20 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# Block PHP files and common PHP attack patterns
+# Edge function for security
+[[edge_functions]]
+  path = "/*"
+  function = "security"
+
+# Block malicious patterns
 [[redirects]]
-  from = "/*.php"
+  from = "/index.php*"
   to = "/404.html"
   status = 404
   force = true
 
 [[redirects]]
-  from = "/index.php"
+  from = "/*.php"
   to = "/404.html"
   status = 404
   force = true
@@ -26,10 +31,45 @@
   force = true
 
 [[redirects]]
-  from = "/*.php?*"
+  from = "/wp-*"
   to = "/404.html"
   status = 404
   force = true
+
+[[redirects]]
+  from = "/wordpress*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/Special:*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/Talk:*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*action=*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Add security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co;"
+    Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
 
 # SPA catch-all rule (must be last)
 [[redirects]]
@@ -39,7 +79,6 @@
 
 [dev]
   framework = "nuxt"
-  targetPort = 3000
 
 [functions]
   directory = "netlify/functions"
