@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+# Colors for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+YELLOW='\033[1;33m'
+
+echo "${YELLOW}Running pre-commit checks...${NC}"
+
+# Change to the catechize directory
+cd catechize
+
+# Check if --no-verify flag was used
+if [ "$HUSKY_SKIP_HOOKS" = "1" ]; then
+  echo "${YELLOW}Skipping build verification (--no-verify flag used)${NC}"
+  exit 0
+fi
+
+# Run the build
+echo "${YELLOW}Running build check...${NC}"
+npm run build
+BUILD_RESULT=$?
+
+if [ $BUILD_RESULT -ne 0 ]; then
+  echo "${RED}❌ Build failed! Please fix the errors before committing.${NC}"
+  echo "${YELLOW}Tip: Use git commit --no-verify to skip this check in emergencies.${NC}"
+  exit 1
+fi
+
+echo "${GREEN}✓ Build successful!${NC}"
+exit 0

@@ -465,3 +465,20 @@ This method ensures clean migration state and proper reapplication of schema and
 ```
 /Users/byamabe/CascadeProjects/windsurf-project/
 └── DEVELOPMENT_PROGRESS.md
+
+```
+
+## Type System Improvements
+
+#### Duration Type Consistency
+- Fixed type mismatch in episode duration handling
+- Database schema expects duration as string
+- Updated all Episode interfaces to consistently use `string` type for duration
+- Added explicit string conversion in episode creation/edit forms
+- Resolved Netlify build failures due to strict type checking
+
+Key learnings:
+1. Clean build environments (like Netlify) enforce stricter type checking
+2. Local builds may pass due to cached types or different settings
+3. Importance of consistent type definitions across interfaces
+4. Value of pre-commit build hooks in catching type issues early

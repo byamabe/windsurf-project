@@ -1,0 +1,13 @@
+{
+  "name": "windsurf-project",
+  "private": true,
+  "scripts": {
+    "build": "cd catechize && npm run build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0"
+  }
+}

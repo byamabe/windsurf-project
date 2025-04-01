@@ -21,8 +21,19 @@
         :podcast-id="episode?.podcastId ?? ''"
         :podcast-title="podcast?.title ?? ''"
         :initial-data="episode ? {
-          ...episode,
-          duration: episode.duration?.toString()
+          id: episode.id,
+          title: episode.title,
+          description: episode.description,
+          audioUrl: episode.audioUrl,
+          videoUrl: episode.videoUrl,
+          transcript: episode.transcript,
+          publishedAt: episode.publishedAt,
+          slug: episode.slug,
+          duration: episode.duration?.toString(),
+          podcastId: episode.podcastId,
+          status: episode.status,
+          authorId: episode.authorId,
+          isPremium: episode.isPremium
         } : undefined"
         @submit="handleSubmit"
         @cancel="navigateBack"

@@ -211,7 +211,8 @@ import {
   DocumentTextIcon,
   BookOpenIcon,
   TagIcon,
-  XMarkIcon
+  XMarkIcon,
+  ChartBarIcon
 } from '@heroicons/vue/24/outline'
 import { useRouter, useSupabaseClient, useSupabaseUser } from '#imports'
 import Toast from '~/components/Toast.vue'
@@ -231,7 +232,8 @@ const navigation = [
   { name: 'Podcasts', href: '/admin/podcasts', icon: MicrophoneIcon, current: false },
   { name: 'Articles', href: '/admin/articles', icon: DocumentTextIcon, current: false },
   { name: 'Resources', href: '/admin/resources', icon: BookOpenIcon, current: false },
-  { name: 'Categories', href: '/admin/categories', icon: TagIcon, current: false }
+  { name: 'Categories', href: '/admin/categories', icon: TagIcon, current: false },
+  { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon, current: false }
 ]
 
 async function handleSignOut() {

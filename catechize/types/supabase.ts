@@ -562,10 +562,17 @@ export interface Episode {
   id: string
   title: string
   description: string | null
-  audio_url: string
+  audio_url: string | null
   image_url?: string | null
+  video_url?: string | null
   podcast_id: string
+  duration?: string
+  transcript?: string | null
+  published_at?: string | null
+  slug: string
   created_at: string
   updated_at: string
   status: 'draft' | 'published' | 'archived'
+  author_id: string
+  is_premium: boolean
 }

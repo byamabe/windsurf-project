@@ -1,3 +1,5 @@
+import type { DatabaseEpisode } from './database'
+
 export interface User {
   id: string
   email: string
@@ -42,19 +44,21 @@ export interface Podcast {
 
 export interface Episode {
   id: string
-  podcast_id: string
+  podcastId: string
   title: string
-  description: string
-  audio_url: string
-  video_url?: string
-  duration: number
-  published_at: string
-  transcript?: string
-  loci_ids: string[]
-  question_ids: string[]
-  is_premium: boolean
-  created_at: string
-  updated_at: string
+  description: string | null
+  audioUrl: string | null
+  videoUrl?: string | null
+  duration?: string
+  publishedAt: string | null
+  transcript?: string | null
+  lociIds: string[]
+  questionIds: string[]
+  isPremium: boolean
+  createdAt: string
+  updatedAt: string
+  authorId: string
+  status: 'draft' | 'published' | 'archived'
 }
 
 export interface Author {
@@ -113,4 +117,44 @@ export interface Comment {
   parent_id?: string
   created_at: string
   updated_at: string
+}
+
+export function toFrontendEpisode(db: DatabaseEpisode): Episode {
+  return {
+    id: db.id,
+    podcastId: db.podcast_id,
+    title: db.title,
+    description: db.description,
+    audioUrl: db.audio_url,
+    videoUrl: db.video_url,
+    duration: db.duration,
+    publishedAt: db.published_at,
+    transcript: db.transcript,
+    lociIds: [], // These need to be loaded separately
+    questionIds: [], // These need to be loaded separately
+    isPremium: db.is_premium,
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
+    authorId: db.author_id,
+    status: db.status
+  }
+}
+
+export function toDatabaseEpisode(fe: Partial<Episode>): Partial<DatabaseEpisode> {
+  return {
+    id: fe.id,
+    podcast_id: fe.podcastId,
+    title: fe.title,
+    description: fe.description,
+    audio_url: fe.audioUrl,
+    video_url: fe.videoUrl,
+    duration: fe.duration,
+    published_at: fe.publishedAt,
+    transcript: fe.transcript,
+    is_premium: fe.isPremium,
+    created_at: fe.createdAt,
+    updated_at: fe.updatedAt,
+    author_id: fe.authorId,
+    status: fe.status
+  }
 }

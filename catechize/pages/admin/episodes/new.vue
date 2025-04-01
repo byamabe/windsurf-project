@@ -85,20 +85,43 @@ onMounted(() => {
 })
 
 const handleSubmit = async (data: EpisodeFormData) => {
-  const isPublished = data.status === 'published'
-  const episode = {
-    title: data.title,
-    description: data.description,
-    audioUrl: data.audioUrl,
-    videoUrl: data.videoUrl,
-    podcastId: route.params.podcastId as string,
-    status: isPublished ? ('published' as const) : ('draft' as const),
-    authorId: user.value?.id || '',
-    isPremium: data.isPremium || false
+  try {
+    if (!route.query.podcastId) {
+      throw new Error('No podcast ID provided')
+    }
+
+    const episode = {
+      title: data.title,
+      description: data.description,
+      audioUrl: data.audioUrl,
+      videoUrl: data.videoUrl,
+      transcript: data.transcript,
+      publishedAt: data.publishedAt,
+      slug: data.slug,
+      duration: data.duration?.toString() || undefined,
+      podcastId: route.query.podcastId as string,
+      status: data.status,
+      isPremium: data.isPremium || false
+    }
+
+    console.log('Creating episode:', episode)
+    await createEpisode(episode)
+    
+    toast.add({
+      title: 'Success',
+      description: 'Episode created successfully',
+      color: 'green'
+    })
+    
+    router.push(`/admin/episodes/podcast/${route.query.podcastId}`)
+  } catch (error) {
+    console.error('Error creating episode:', error)
+    toast.add({
+      title: 'Error',
+      description: error instanceof Error ? error.message : 'Failed to create episode',
+      color: 'red'
+    })
   }
-  
-  await useEpisode().createEpisode(episode)
-  navigateTo('/admin/episodes')
 }
 
 definePageMeta({

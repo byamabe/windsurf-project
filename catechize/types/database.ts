@@ -14,24 +14,28 @@ export interface Podcast {
   episode_count?: number
 }
 
-export interface Episode {
+// Database schema types - these match exactly what's in the database
+export interface DatabaseEpisode {
   id: string
   created_at: string
+  updated_at: string
   title: string
   description: string | null
   audio_url: string | null
+  video_url: string | null
   podcast_id: string
   author_id: string
   published: boolean
-  duration: number | null
+  duration?: string
   transcript: string | null
-  updated_at: string
   slug: string
-  video_url: string | null
   published_at: string | null
-  status: 'draft' | 'published' | 'archived'
   is_premium: boolean
+  status: 'draft' | 'published' | 'archived'
 }
+
+// Re-export for backward compatibility
+export type { DatabaseEpisode as Episode }
 
 export interface User {
   id: string
@@ -51,9 +55,9 @@ export interface Database {
         Update: Partial<Omit<Podcast, 'id' | 'created_at' | 'updated_at' | 'episode_count'>>
       }
       episodes: {
-        Row: Episode
-        Insert: Omit<Episode, 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Omit<Episode, 'id' | 'created_at' | 'updated_at'>>
+        Row: DatabaseEpisode
+        Insert: Omit<DatabaseEpisode, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<DatabaseEpisode, 'id' | 'created_at' | 'updated_at'>>
       }
       users: {
         Row: User

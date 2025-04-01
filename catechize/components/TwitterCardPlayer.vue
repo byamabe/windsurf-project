@@ -1,223 +1,72 @@
 <template>
-  <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-2 rounded-lg shadow-lg">
-    <audio
-      ref="audioElement"
-      class="hidden"
-      :src="audioUrl"
-      preload="metadata"
-      @timeupdate="handleTimeUpdate"
-      @loadedmetadata="handleLoadedMetadata"
-      @progress="handleProgress"
-      @waiting="isLoading = true"
-      @canplay="isLoading = false"
-    >
-      Your browser does not support the audio element.
-    </audio>
-    
-    <!-- Progress bar -->
-    <div class="relative mb-2">
-      <!-- Loading indicator -->
-      <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center">
-        <div class="animate-spin rounded-full h-3 w-3 border-2 border-blue-500 border-t-transparent"></div>
-      </div>
-
-      <!-- Progress bar -->
-      <div 
-        ref="progressBar"
-        class="w-full bg-gray-700/50 rounded-full h-1.5 cursor-pointer relative"
-        @click="handleProgressClick"
-        @mousedown="startDragging"
-      >
-        <div 
-          class="bg-blue-500 h-full rounded-full transition-all duration-100"
-          :style="{ width: `${(currentTime / duration) * 100}%` }"
-        ></div>
+  <!-- 
+    Twitter Player Card Preview
+    This is a static preview component that mimics how the episode will appear
+    when shared on Twitter. No actual playback functionality since Twitter
+    Cards do not support audio playback.
+  -->
+  <div 
+    class="twitter-player-card bg-gray-900 text-white rounded-lg overflow-hidden"
+    :style="{ width: '480px', height: '270px' }"
+  >
+    <!-- Header with branding -->
+    <div class="p-4 border-b border-gray-800">
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+          <span class="text-lg font-bold">C</span>
+        </div>
+        <div>
+          <h1 class="font-semibold">Catechize</h1>
+          <p class="text-xs text-gray-400">Audio Episodes</p>
+        </div>
       </div>
     </div>
 
-    <!-- Controls -->
-    <div class="flex items-center justify-between">
-      <!-- Time -->
-      <div class="text-gray-400 text-xs w-14">
-        {{ formatTime(currentTime) }}
-      </div>
+    <!-- Episode preview -->
+    <div class="flex items-center justify-between p-6">
+      <div class="flex-1">
+        <div class="flex items-center space-x-4">
+          <!-- Play button (decorative) -->
+          <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            </svg>
+          </div>
 
-      <!-- Center controls -->
-      <div class="flex items-center justify-center space-x-2">
-        <button 
-          @click="skipBackward"
-          class="text-gray-400 hover:text-white focus:outline-none"
-          title="Skip backward 15 seconds"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
-          </svg>
-        </button>
-
-        <button 
-          @click="togglePlay"
-          class="text-white hover:text-blue-400 focus:outline-none"
-          title="Play/Pause"
-        >
-          <svg v-if="!isPlaying" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <svg v-else class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </button>
-
-        <button 
-          @click="skipForward"
-          class="text-gray-400 hover:text-white focus:outline-none"
-          title="Skip forward 15 seconds"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- Speed control -->
-      <div class="relative speed-control">
-        <button 
-          @click.stop="toggleSpeedPopup"
-          class="text-xs text-gray-400 hover:text-white focus:outline-none w-14 text-right"
-          title="Playback speed"
-        >
-          {{ playbackSpeed }}x
-        </button>
-        <div 
-          v-if="showSpeedPopup"
-          class="absolute bottom-full right-0 mb-1 bg-gray-800 rounded-lg shadow-lg p-2 z-50"
-        >
-          <div class="flex flex-col space-y-1">
-            <button
-              v-for="speed in [0.5, 1, 1.25, 1.5, 2]"
-              :key="speed"
-              @click.stop="setPlaybackSpeed(speed)"
-              class="px-3 py-1 text-xs text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-              :class="{ 'text-blue-500': playbackSpeed === speed }"
-            >
-              {{ speed }}x
-            </button>
+          <div>
+            <h2 class="font-medium mb-1">Listen on Catechize</h2>
+            <p class="text-sm text-gray-400">Click to open full episode</p>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-900">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-400">catechize.org</span>
+        <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-
-const props = defineProps<{
-  audioUrl: string
+/**
+ * TwitterCardPlayer
+ * 
+ * A static preview component that shows how an episode will appear when shared
+ * on Twitter. This is NOT an actual player - Twitter Cards do not support
+ * audio playback. Instead, this preview links to the full episode page.
+ * 
+ * The dimensions (480x270) match Twitter's player card specifications for
+ * optimal display in the Twitter feed.
+ */
+defineProps<{
+  audioUrl: string,
+  episodeId?: string,
+  podcastId?: string
 }>()
-
-const audioElement = ref<HTMLAudioElement>()
-const progressBar = ref<HTMLElement>()
-const currentTime = ref(0)
-const duration = ref(0)
-const isPlaying = ref(false)
-const isLoading = ref(false)
-const playbackSpeed = ref(1)
-const showSpeedPopup = ref(false)
-
-// Time formatting
-const formatTime = (time: number): string => {
-  const minutes = Math.floor(time / 60)
-  const seconds = Math.floor(time % 60)
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
-
-// Playback controls
-const togglePlay = () => {
-  if (!audioElement.value) return
-  if (isPlaying.value) {
-    audioElement.value.pause()
-  } else {
-    audioElement.value.play()
-  }
-  isPlaying.value = !isPlaying.value
-}
-
-const skipForward = () => {
-  if (!audioElement.value) return
-  audioElement.value.currentTime = Math.min(audioElement.value.currentTime + 15, duration.value)
-}
-
-const skipBackward = () => {
-  if (!audioElement.value) return
-  audioElement.value.currentTime = Math.max(audioElement.value.currentTime - 15, 0)
-}
-
-// Progress bar
-const handleProgressClick = (event: MouseEvent) => {
-  if (!progressBar.value || !audioElement.value) return
-  const rect = progressBar.value.getBoundingClientRect()
-  const pos = (event.clientX - rect.left) / rect.width
-  audioElement.value.currentTime = pos * duration.value
-}
-
-const startDragging = (event: MouseEvent) => {
-  if (!progressBar.value || !audioElement.value) return
-  const handleDrag = (e: MouseEvent) => {
-    const rect = progressBar.value!.getBoundingClientRect()
-    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    audioElement.value!.currentTime = pos * duration.value
-  }
-  
-  const stopDragging = () => {
-    document.removeEventListener('mousemove', handleDrag)
-    document.removeEventListener('mouseup', stopDragging)
-  }
-  
-  document.addEventListener('mousemove', handleDrag)
-  document.addEventListener('mouseup', stopDragging)
-}
-
-// Speed control
-const toggleSpeedPopup = () => {
-  showSpeedPopup.value = !showSpeedPopup.value
-}
-
-const setPlaybackSpeed = (speed: number) => {
-  if (!audioElement.value) return
-  playbackSpeed.value = speed
-  audioElement.value.playbackRate = speed
-  showSpeedPopup.value = false
-}
-
-// Event handlers
-const handleTimeUpdate = () => {
-  if (!audioElement.value) return
-  currentTime.value = audioElement.value.currentTime
-}
-
-const handleLoadedMetadata = () => {
-  if (!audioElement.value) return
-  duration.value = audioElement.value.duration
-}
-
-const handleProgress = () => {
-  isLoading.value = false
-}
-
-// Close speed popup when clicking outside
-const closePopups = (event: MouseEvent) => {
-  const target = event.target as HTMLElement
-  if (!target.closest('.speed-control')) {
-    showSpeedPopup.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('mousedown', closePopups)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('mousedown', closePopups)
-})
 </script>
