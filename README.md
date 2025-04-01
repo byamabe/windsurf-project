@@ -8,6 +8,7 @@ This is a monorepo containing multiple projects, including Catechize.org.
 
 ## Documentation
 
+- [Best Practices Guide](./docs/BEST_PRACTICES.md) - Comprehensive development guidelines and lessons learned
 - [Type System Best Practices](./docs/TYPE_SYSTEM.md) - Guidelines for maintaining type safety across the application
 - [Project Structure Guidelines](./docs/PROJECT_STRUCTURE.md) - Best practices for project organization
 - [Development Progress](./DEVELOPMENT_PROGRESS.md) - Ongoing development updates and progress tracking
