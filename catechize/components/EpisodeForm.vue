@@ -61,7 +61,7 @@
       <input
         type="number"
         id="duration"
-        v-model="formData.duration"
+        v-model.number="formData.duration"
         min="0"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
       />
@@ -120,50 +120,87 @@
 </template>
 
 <script setup lang="ts">
+import type { Episode } from '~/types'
+
+// Form-specific version of Episode with nullable fields
 export interface EpisodeFormData {
+  // Required fields
+  id?: string
   title: string
+  podcastId: string
+  authorId: string
+  status: 'draft' | 'published' | 'archived'
+  isPremium: boolean
+  slug: string
+
+  // Nullable fields
   description: string | null
   audioUrl: string | null
   videoUrl: string | null
   transcript: string | null
   publishedAt: string | null
-  slug: string
-  duration: number | null
-  podcastId: string
-  status: 'draft' | 'published' | 'archived'
-  authorId: string
-  isPremium: boolean
+  duration?: string
 }
 
 import { ref } from 'vue'
+import { useSupabaseUser } from '#imports'
 
 const props = defineProps<{
   initialData?: Partial<EpisodeFormData>
   podcastTitle?: string
+  podcastId: string
 }>()
 
 const emit = defineEmits<{
   (e: 'submit', data: EpisodeFormData): void
   (e: 'cancel'): void
+  (e: 'error', error: Error): void
 }>()
 
+const user = useSupabaseUser()
+const generateSlug = (title: string) => {
+  return title.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
 const formData = ref<EpisodeFormData>({
-  title: '',
-  description: null,
-  audioUrl: null,
-  videoUrl: null,
-  transcript: null,
-  publishedAt: null,
-  slug: '',
-  duration: null,
-  podcastId: '',
-  status: 'draft',
-  authorId: '',
-  isPremium: false,
-  ...props.initialData
+  id: props.initialData?.id,
+  title: props.initialData?.title ?? '',
+  description: props.initialData?.description ?? null,
+  audioUrl: props.initialData?.audioUrl ?? null,
+  videoUrl: props.initialData?.videoUrl ?? null,
+  publishedAt: props.initialData?.publishedAt ?? null,
+  transcript: props.initialData?.transcript ?? null,
+  duration: props.initialData?.duration,
+  podcastId: props.podcastId,
+  authorId: user.value?.id ?? '',
+  status: props.initialData?.status ?? 'draft',
+  isPremium: props.initialData?.isPremium ?? false,
+  slug: props.initialData?.slug ?? generateSlug(props.initialData?.title ?? '')
 })
 
 const handleSubmit = async () => {
-  emit('submit', formData.value)
+  try {
+    // Generate slug from title if not provided
+    if (!formData.value.slug && formData.value.title) {
+      formData.value.slug = generateSlug(formData.value.title)
+    }
+
+    // Ensure required fields are set
+    if (!formData.value.podcastId) {
+      throw new Error('Podcast ID is required')
+    }
+
+    if (!formData.value.authorId) {
+      throw new Error('Author ID is required')
+    }
+
+    console.log('Submitting form data:', formData.value)
+    emit('submit', formData.value)
+  } catch (error) {
+    console.error('Error in form submission:', error)
+    emit('error', error instanceof Error ? error : new Error(String(error)))
+  }
 }
 </script>
