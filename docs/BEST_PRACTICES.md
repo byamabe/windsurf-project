@@ -295,6 +295,49 @@ Currently implemented in `netlify.toml`:
   force = true
 ```
 
+### Edge Function Error Handling
+
+When implementing edge functions, especially those handling security or rate limiting:
+
+1. **Always wrap KV operations in try-catch blocks**
+   ```typescript
+   try {
+     const value = await context.env.get(key);
+     await context.env.set(key, newValue);
+   } catch (kvError) {
+     console.error('KV operation failed:', kvError);
+     // Fallback behavior (e.g., allow request but don't track it)
+   }
+   ```
+
+2. **Implement global error handling**
+   ```typescript
+   export default async (request: Request, context: Context) => {
+     try {
+       // Edge function logic
+     } catch (error) {
+       console.error('Edge function error:', error);
+       // Fallback behavior (e.g., allow request with reduced security)
+       return context.next();
+     }
+   };
+   ```
+
+3. **Graceful Degradation**
+   - On KV errors: Allow requests but don't track rate limits
+   - On general errors: Log the error and allow requests through
+   - Never block legitimate traffic due to infrastructure issues
+
+4. **Error Visibility**
+   - Log all errors with sufficient context for debugging
+   - Consider adding error tracking metrics
+   - Monitor error rates to detect infrastructure issues
+
+5. **Testing**
+   - Test error scenarios by simulating KV failures
+   - Verify fallback behaviors work as expected
+   - Ensure errors are properly logged
+
 ### API Security
 ```typescript
 // server/api/episodes/[id].get.ts
