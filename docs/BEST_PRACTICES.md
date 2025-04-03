@@ -12,6 +12,7 @@ A collection of best practices and lessons learned from our projects. Use this a
 7. [Security](#security)
 8. [Performance](#performance)
 9. [Maintaining This Guide](#maintaining-this-guide)
+10. [Headless UI Dropdown Menus with Client-Side Navigation](#headless-ui-dropdown-menus-with-client-side-navigation)
 
 ## Project Structure
 
@@ -186,6 +187,47 @@ const formData = ref<EpisodeFormData>({
 - Performance metrics
 
 ## Security
+
+### Admin Route Authorization
+
+We implement a role-based permission system for admin routes:
+
+1. **Required Middleware**
+```typescript
+definePageMeta({
+  layout: 'admin',
+  middleware: ['auth', 'admin']  // Both required
+})
+```
+
+2. **Permission Levels**
+```typescript
+// Available Permissions
+- create:any_content  // Content management
+- read:any_content    // Content viewing
+- update:any_content  // Content editing
+- delete:any_content  // Content deletion
+- manage:users        // User management
+- manage:roles        // System administration
+```
+
+3. **Route Permission Mapping**
+```typescript
+const routeToPermissionMap = {
+  '/admin': 'manage:roles',              // Admin dashboard
+  '/admin/podcasts': 'create:any_content',   // Content management
+  '/admin/episodes': 'create:any_content',
+  '/admin/users': 'manage:users',        // User management
+  '/admin/test/*': 'manage:roles'        // Test pages (highest privilege)
+}
+```
+
+4. **Best Practices**
+- All admin pages must use both `auth` and `admin` middleware
+- Test pages should be under `/admin/test/` with `manage:roles` permission
+- Content management pages should use `create:any_content`
+- User management pages should use `manage:users`
+- System administration should use `manage:roles`
 
 ### Edge-Level Security
 
@@ -556,3 +598,35 @@ To add new best practices:
 4. Update relevant sections
 
 Keep this guide living and evolving with new experiences and lessons learned.
+
+## Headless UI Dropdown Menus with Client-Side Navigation
+
+When implementing dropdown menus that require client-side navigation (e.g., in the admin interface), follow these guidelines:
+
+1. Use Headless UI's `Menu`, `MenuButton`, `MenuItems`, and `MenuItem` components for proper accessibility and behavior
+2. Wrap clickable items in `MenuItem` components to get automatic menu closing behavior
+3. Use `button` elements inside `MenuItem` for navigation items
+4. Use `navigateTo()` for client-side navigation to prevent page refreshes
+
+Example:
+```vue
+<Menu as="div" class="relative">
+  <MenuButton>Dropdown Button</MenuButton>
+  <MenuItems>
+    <MenuItem v-slot="{ active }">
+      <button 
+        class="block w-full text-left hover:bg-gray-100" 
+        @click="() => navigateTo('/path')"
+      >
+        Menu Item
+      </button>
+    </MenuItem>
+  </MenuItems>
+</Menu>
+```
+
+This pattern ensures:
+- Menus close automatically when items are clicked
+- Navigation happens client-side without page refreshes
+- Proper accessibility is maintained
+- Consistent styling and hover effects

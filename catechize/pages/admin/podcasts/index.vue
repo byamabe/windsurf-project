@@ -150,7 +150,7 @@ const handleDelete = async (id: string) => {
 
 definePageMeta({
   layout: 'admin',
-  middleware: ['auth']
+  middleware: ['auth', 'admin']
 })
 
 </script>

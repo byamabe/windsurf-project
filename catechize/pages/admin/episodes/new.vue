@@ -126,6 +126,6 @@ const handleSubmit = async (data: EpisodeFormData) => {
 
 definePageMeta({
   layout: 'admin',
-  middleware: ['auth']
+  middleware: ['auth', 'admin']
 })
 </script>

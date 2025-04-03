@@ -78,21 +78,19 @@
           <div v-if="episode.videoUrl" class="mb-4">
             <YouTubeEmbed
               v-if="isYouTubeUrl(episode.videoUrl)"
-              :video-url="episode.videoUrl"
+              :videoId="getYouTubeVideoId(episode.videoUrl)"
               ref="youtubePlayerRef"
               @timeupdate="handleTimeUpdate"
+              @seeked="handleYouTubeSeek"
             />
             <video
               v-else
-              class="w-full aspect-video rounded-lg"
-              :src="episode.videoUrl"
-              controls
-              preload="metadata"
               ref="videoRef"
-              @timeupdate="(e: Event) => {
-                const target = e.target as HTMLVideoElement;
-                handleTimeUpdate(target.currentTime);
-              }"
+              :src="episode.videoUrl"
+              class="w-full aspect-video rounded-lg"
+              controls
+              @timeupdate="handleVideoTimeUpdate"
+              @seeked="handleVideoSeek"
             />
           </div>
 
@@ -112,7 +110,7 @@
           <InteractiveTranscript 
             :transcript="episode.transcript"
             :current-time="currentTime"
-            @seek="handleSeek"
+            @seek="handleTranscriptSeek"
           />
         </div>
 
@@ -166,6 +164,7 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 const youtubePlayerRef = ref<any>(null)
 const audioPlayerRef = ref<any>(null)
 const currentTime = ref<number>(0)
+let lastTime = 0
 
 // UI state
 const showShareModal = ref(false)
@@ -266,7 +265,9 @@ function logEpisodeData() {
   console.log('Episode data:', {
     episode: episode.value,
     hasAudio: episode.value?.audioUrl ? true : false,
-    audioUrl: episode.value?.audioUrl
+    audioUrl: episode.value?.audioUrl,
+    hasVideo: episode.value?.videoUrl ? true : false,
+    videoUrl: episode.value?.videoUrl
   })
 }
 
@@ -280,26 +281,47 @@ const formatDate = (date: string | null) => {
 }
 
 const handleTimeUpdate = (time: number) => {
-  currentTime.value = Math.floor(time);
-};
+  // Update current time
+  currentTime.value = time
+}
 
-const handleSeek = (timeInSeconds: number) => {
+const handleVideoTimeUpdate = (event: Event) => {
+  const target = event.target as HTMLVideoElement
+  handleTimeUpdate(target.currentTime)
+}
+
+const handleVideoSeek = (event: Event) => {
+  const target = event.target as HTMLVideoElement
+  handleSeek({ start: lastTime, end: target.currentTime })
+}
+
+const handleYouTubeSeek = (seekInfo: { start: number; end: number }) => {
+  handleSeek(seekInfo)
+}
+
+const handleTranscriptSeek = (time: number) => {
+  handleSeek({ start: lastTime, end: time })
+}
+
+const handleSeek = (seekInfo: { start: number; end: number }) => {
+  // Handle seek events
+  currentTime.value = seekInfo.end
+  lastTime = seekInfo.end
+
+  // Update media players
   if (episode.value?.videoUrl) {
     if (isYouTubeUrl(episode.value.videoUrl)) {
-      youtubePlayerRef.value?.seekTo(timeInSeconds);
+      youtubePlayerRef.value?.seek(seekInfo.end)
     } else {
-      videoRef.value && (videoRef.value.currentTime = timeInSeconds);
+      videoRef.value && (videoRef.value.currentTime = seekInfo.end)
     }
   } else if (episode.value?.audioUrl) {
-    const audioElement = audioPlayerRef.value?.getAudioElement();
+    const audioElement = audioPlayerRef.value?.getAudioElement()
     if (audioElement) {
-      audioElement.currentTime = timeInSeconds;
+      audioElement.currentTime = seekInfo.end
     }
   }
-  
-  // Update current time immediately for smoother UI
-  currentTime.value = timeInSeconds;
-};
+}
 
 const isYouTubeUrl = (url: string): boolean => {
   const patterns = [
@@ -308,6 +330,25 @@ const isYouTubeUrl = (url: string): boolean => {
     /(?:https?:\/\/)?(?:www\.)?youtu\.be\/[^/?]+/i
   ]
   return patterns.some(pattern => pattern.test(url))
+}
+
+const getYouTubeVideoId = (url: string): string => {
+  const patterns = [
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/i,
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^/?]+)/i,
+    /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^/?]+)/i
+  ]
+  const match = patterns.find(pattern => pattern.test(url))
+  if (!match) {
+    console.error('Invalid YouTube URL:', url)
+    return ''
+  }
+  const result = match.exec(url)
+  if (!result || !result[1]) {
+    console.error('Could not extract video ID from URL:', url)
+    return ''
+  }
+  return result[1]
 }
 
 onMounted(async () => {

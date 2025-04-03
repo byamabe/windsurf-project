@@ -1,6 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const user = useSupabaseUser()
-  const { hasPermission } = usePermissions()
+  const { hasPermission, getUserPermissions } = usePermissions()
   
   try {
     // Check if user is authenticated
@@ -10,12 +10,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     // Check required permissions based on route
     const routeToPermissionMap: Record<string, string> = {
-      '/admin': 'system.manage',
-      '/admin/podcasts': 'content.create',
-      '/admin/articles': 'content.create',
-      '/admin/resources': 'content.create',
-      '/admin/categories': 'categories.create',
-      '/admin/users': 'users.view'
+      '/admin': 'manage:roles',  // Admin dashboard requires role management
+      '/admin/podcasts': 'create:any_content',
+      '/admin/episodes': 'create:any_content',
+      '/admin/articles': 'create:any_content',
+      '/admin/resources': 'create:any_content',
+      '/admin/categories': 'create:any_content',
+      '/admin/users': 'manage:users',
+      '/admin/test': 'manage:roles',  // Test pages require highest privilege
+      '/admin/test/media-player': 'manage:roles',
+      '/admin/test/auth': 'manage:roles'
     }
 
     // Get the most specific permission required for this route
@@ -29,7 +33,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
 
     // Check if user has required permission
-    const hasAccess = await hasPermission(requiredPermission)
+    console.log('Checking permission:', requiredPermission, 'for user:', user.value?.email)
+    const permissions = await getUserPermissions()
+    console.log('User permissions:', permissions)
+    const hasAccess = permissions.includes(requiredPermission)
     
     if (!hasAccess) {
       console.error('User does not have required permission:', requiredPermission)

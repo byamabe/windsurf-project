@@ -139,7 +139,8 @@ import {
 
 // Define middleware
 definePageMeta({
-  middleware: ['auth']
+  layout: 'admin',
+  middleware: ['auth', 'admin']
 })
 
 const supabase = useSupabaseClient<Database>()

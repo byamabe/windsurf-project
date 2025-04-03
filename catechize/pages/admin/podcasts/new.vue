@@ -68,6 +68,6 @@ const handleSubmit = async (data: PodcastFormData) => {
 
 definePageMeta({
   layout: 'admin',
-  middleware: ['auth']
+  middleware: ['auth', 'admin']
 })
 </script>

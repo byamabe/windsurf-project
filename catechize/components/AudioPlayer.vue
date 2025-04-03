@@ -184,30 +184,16 @@
 </template>
 
 <script setup lang="ts">
-interface TimeRange {
-  start: number
-  end: number
-}
-
 import { ref, onMounted, onUnmounted, defineExpose, defineEmits, watch } from 'vue'
-import AudioWaveform from './AudioWaveform.vue'
 
 const props = defineProps<{
   audioUrl: string
-  timeRanges?: Array<{
-    start: number
-    end: number
-    label: string
-  }>
 }>()
-
-// Debug logging
-console.log('AudioPlayer mounted with URL:', props.audioUrl)
 
 const emit = defineEmits<{
   (e: 'timeupdate', time: number): void
   (e: 'durationchange', duration: number): void
-  (e: 'seeked', time: TimeRange): void
+  (e: 'seeked', time: { start: number, end: number }): void
 }>()
 
 const audioElement = ref<HTMLAudioElement | null>(null)
@@ -219,7 +205,7 @@ const isLoading = ref(false)
 const volume = ref(1)
 const isMuted = ref(false)
 const playbackSpeed = ref(1)
-const buffered = ref<TimeRange[]>([])
+const buffered = ref<{ start: number, end: number }[]>([])
 const isVolumeOpen = ref(false)
 const isSpeedOpen = ref(false)
 const isDragging = ref(false)
@@ -257,6 +243,12 @@ onMounted(() => {
 watch(() => props.audioUrl, (newUrl) => {
   console.log('Audio URL changed:', newUrl)
   if (audioElement.value) {
+    // Clean up old player
+    if (isPlaying.value) {
+      audioElement.value.pause()
+    }
+    
+    // Create new player
     audioElement.value.src = newUrl
     audioElement.value.load()
   }
@@ -289,7 +281,7 @@ const handleLoadedMetadata = () => {
 const handleProgress = () => {
   if (audioElement.value) {
     const timeRanges = audioElement.value.buffered
-    const newBuffered: TimeRange[] = []
+    const newBuffered: { start: number, end: number }[] = []
     for (let i = 0; i < timeRanges.length; i++) {
       newBuffered.push({
         start: timeRanges.start(i),
@@ -300,13 +292,11 @@ const handleProgress = () => {
   }
 }
 
-const seek = (time: TimeRange) => {
+const seek = (time: { start: number, end: number }) => {
   if (!audioElement.value) return
   audioElement.value.currentTime = time.start
   emit('seeked', time)
 }
-
-const timeRanges = ref(props.timeRanges || [])
 
 const formatTime = (time: number): string => {
   const hours = Math.floor(time / 3600)

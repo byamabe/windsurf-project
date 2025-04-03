@@ -1,50 +1,44 @@
 <template>
-  <div class="relative w-full aspect-video">
-    <div ref="playerContainer" class="absolute top-0 left-0 w-full h-full rounded-lg"></div>
-  </div>
+  <div ref="playerContainer" class="aspect-video bg-gray-900"></div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { loadYouTubeApi, getYouTubeVideoId } from '~/utils/youtube'
 
-// Type definitions for YouTube IFrame API
-declare global {
-  interface Window {
-    YT: {
-      Player: any;
-      PlayerState: {
-        PLAYING: number;
-        PAUSED: number;
-        ENDED: number;
-      };
-    };
-    onYouTubeIframeAPIReady: () => void;
-  }
+interface Props {
+  videoId: string
+  onTimeupdate?: (time: number) => void
+  onSeeked?: (time: { start: number; end: number }) => void
 }
 
-const props = defineProps<{
-  videoUrl: string
-}>()
-
+const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'timeupdate', time: number): void
+  (e: 'seeked', time: { start: number, end: number }): void
 }>()
 
-const playerContainer = ref<HTMLDivElement | null>(null)
-const player = ref<any>(null)
-let timeTrackingInterval: number | null = null
+const playerContainer = ref<HTMLElement>()
+let player: any = null
+let lastTime = 0
 
-const getVideoId = (url: string): string => {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-  const match = url.match(regExp)
-  return match?.[2] || ''
-}
+// Time tracking
+let timeTrackingInterval: number | null = null
 
 const startTimeTracking = () => {
   if (timeTrackingInterval) return
   timeTrackingInterval = window.setInterval(() => {
-    if (player.value?.getCurrentTime) {
-      emit('timeupdate', player.value.getCurrentTime())
+    if (player) {
+      const currentTime = player.getCurrentTime()
+      if (props.onTimeupdate) {
+        props.onTimeupdate(currentTime)
+        emit('timeupdate', currentTime)
+      }
+      if (Math.abs(currentTime - lastTime) > 1 && props.onSeeked) {
+        props.onSeeked({ start: lastTime, end: currentTime })
+        emit('seeked', { start: lastTime, end: currentTime })
+      }
+      lastTime = currentTime
     }
   }, 1000)
 }
@@ -56,64 +50,54 @@ const stopTimeTracking = () => {
   }
 }
 
-const initPlayer = () => {
-  const videoId = getVideoId(props.videoUrl)
-  if (!videoId || !playerContainer.value) return
+// Initialize YouTube player
+onMounted(async () => {
+  await loadYouTubeApi()
+  if (!playerContainer.value) return
 
-  player.value = new window.YT.Player(playerContainer.value, {
-    videoId,
+  player = new window.YT.Player(playerContainer.value, {
+    height: '100%',
+    width: '100%',
+    videoId: props.videoId,
     playerVars: {
-      playsinline: 1,
+      autoplay: 0,
       modestbranding: 1,
+      playsinline: 1,
       rel: 0
     },
     events: {
-      onStateChange: (event: any) => {
-        if (event.data === window.YT.PlayerState.PLAYING) {
-          startTimeTracking()
-        } else {
-          stopTimeTracking()
-        }
+      onStateChange: handleStateChange,
+      onError: (event) => {
+        console.error('YouTube player error:', event.data)
       }
     }
   })
-}
-
-onMounted(() => {
-  // Load YouTube IFrame API if not already loaded
-  if (!window.YT) {
-    const tag = document.createElement('script')
-    tag.src = 'https://www.youtube.com/iframe_api'
-    const firstScriptTag = document.getElementsByTagName('script')[0]
-    if (firstScriptTag?.parentNode) {
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag)
-    }
-  }
-
-  // Initialize when API is ready
-  if (window.YT?.Player) {
-    initPlayer()
-  } else {
-    window.onYouTubeIframeAPIReady = initPlayer
-  }
 })
 
+// Handle player state changes
+const handleStateChange = (event: { data: number }) => {
+  if (event.data === window.YT.PlayerState.PLAYING) {
+    startTimeTracking()
+  } else {
+    stopTimeTracking()
+  }
+}
+
+// Cleanup
 onUnmounted(() => {
   stopTimeTracking()
-  if (player.value?.destroy) {
-    player.value.destroy()
+  if (player) {
+    player.destroy()
+    player = null
   }
 })
 
-// Method to seek to a specific time
-const seekTo = (time: number) => {
-  if (player.value?.seekTo) {
-    player.value.seekTo(time)
-    emit('timeupdate', time)
-  }
-}
-
+// Expose methods
 defineExpose({
-  seekTo
+  play: () => player?.playVideo(),
+  pause: () => player?.pauseVideo(),
+  seek: (time: number) => player?.seekTo(time, true),
+  setVolume: (volume: number) => player?.setVolume(volume * 100),
+  setSpeed: (speed: number) => player?.setPlaybackRate(speed)
 })
 </script>

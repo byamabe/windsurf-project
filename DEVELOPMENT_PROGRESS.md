@@ -482,3 +482,23 @@ Key learnings:
 2. Local builds may pass due to cached types or different settings
 3. Importance of consistent type definitions across interfaces
 4. Value of pre-commit build hooks in catching type issues early
+
+## 2025-04-02
+
+### Fixed Dropdown Menu Behavior in Admin Layout
+
+Fixed issues with dropdown menus in the admin interface:
+
+1. **Problem**: Test Pages dropdown menu wasn't closing when selecting items and would flicker during navigation
+2. **Solution**: Implemented proper Headless UI pattern using `MenuItem` components with button-based navigation
+3. **Changes**:
+   - Updated `TheHeader.vue` to use proper Headless UI menu structure
+   - Added client-side navigation using `navigateTo()`
+   - Documented the pattern in `docs/BEST_PRACTICES.md`
+4. **Results**:
+   - Dropdowns now close automatically when items are clicked
+   - No more flickering during navigation
+   - Maintained proper hover effects and transitions
+   - Improved accessibility
+
+See the [Headless UI Dropdown Menus section](docs/BEST_PRACTICES.md#headless-ui-dropdown-menus-with-client-side-navigation) in Best Practices for implementation details.

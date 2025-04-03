@@ -115,6 +115,26 @@
 > - ⏳ Pending: Planned but not started
 > - ❌ Cancelled: Not possible or no longer needed
 
+## Code Refactoring and Improvements
+### Media Player Refactoring
+- [ ] Create unified media player composable (`useMediaPlayer`)
+  - [ ] Centralize playback logic from AudioPlayer, YouTubeEmbed, and video elements
+  - [ ] Implement shared time tracking functionality
+  - [ ] Create unified event handling system
+  - [ ] Extract reusable UI components for player controls
+
+### Transcript System Enhancement
+- [ ] Create `useTranscript` composable
+  - [ ] Centralize transcript parsing logic
+  - [ ] Implement transcript editing capabilities
+  - [ ] Add word highlighting during playback
+  - [ ] Implement robust error handling for transcript operations
+
+### UI Component Optimization
+- [ ] Extract and standardize shared player controls
+- [ ] Create reusable time formatting utilities
+- [ ] Implement consistent keyboard event handling
+
 ## Documentation Style Guide
 
 ### Status Indicators
