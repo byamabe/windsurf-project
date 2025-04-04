@@ -1,9 +1,11 @@
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { loadYouTubeApi, getYouTubeVideoId } from '../utils/youtube'
+import { ref, onMounted, onUnmounted, type Ref, watch } from 'vue'
+import { loadYouTubeApi, getYouTubeVideoId } from '~/utils/youtube'
+import { useMediaProgress } from '~/composables/useMediaProgress'
 
 export interface MediaSource {
   type: 'audio' | 'video' | 'youtube'
   url: string
+  id: string
 }
 
 export interface TimeRange {
@@ -15,147 +17,133 @@ export interface MediaPlayerState {
   currentTime: number
   duration: number
   isPlaying: boolean
+  isLoading: boolean
   volume: number
   speed: number
   buffered: TimeRange[]
-  isLoading: boolean
   error: Error | null
 }
 
 export interface MediaPlayerControls {
-  play: () => Promise<void>
-  pause: () => void
-  togglePlay: () => Promise<void>
-  seek: (time: number) => void
-  setVolume: (volume: number) => void
-  setSpeed: (speed: number) => void
-  skipForward: (seconds?: number) => void
-  skipBackward: (seconds?: number) => void
+  play(): Promise<void>
+  pause(): void
+  togglePlay(): Promise<void>
+  seek(time: number): void
+  setVolume(volume: number): void
+  setSpeed(speed: number): void
+  skipForward(seconds?: number): void
+  skipBackward(seconds?: number): void
+  setMediaElement(element: HTMLMediaElement | null): void
 }
 
-export function useMediaPlayer(source: MediaSource, container?: Ref<HTMLElement | null>) {
+interface MediaElements {
+  audioElement?: Ref<HTMLAudioElement | null>
+  videoElement?: Ref<HTMLVideoElement | null>
+}
+
+export type { MediaElements }
+
+export function useMediaPlayer(
+  source: MediaSource,
+  container?: Ref<HTMLElement | null>,
+  elements?: MediaElements
+) {
   // State
   const state = ref<MediaPlayerState>({
     currentTime: 0,
     duration: 0,
     isPlaying: false,
+    isLoading: true,
     volume: 1,
     speed: 1,
     buffered: [],
-    isLoading: true,
     error: null
   })
 
   // Media element refs
-  const audioElement = ref<HTMLAudioElement | null>(null)
-  const videoElement = ref<HTMLVideoElement | null>(null)
+  const audioElement = elements?.audioElement || ref<HTMLAudioElement | null>(null)
+  const videoElement = elements?.videoElement || ref<HTMLVideoElement | null>(null)
   const youtubePlayer = ref<any>(null)
 
-  // Internal state
+  const { updateProgress, getProgress } = useMediaProgress()
+
   let timeTrackingInterval: number | null = null
 
-  // Common functionality
-  const formatTime = (time: number): string => {
-    const hours = Math.floor(time / 3600)
-    const minutes = Math.floor((time % 3600) / 60)
-    const seconds = Math.floor(time % 60)
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-    }
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`
-  }
-
-  const startTimeTracking = () => {
-    if (timeTrackingInterval) return
-    timeTrackingInterval = window.setInterval(() => {
-      if (source.type === 'youtube' && youtubePlayer.value?.getCurrentTime) {
-        state.value.currentTime = youtubePlayer.value.getCurrentTime()
+  // Save progress when time or duration changes
+  watch(
+    () => ({ time: state.value.currentTime, duration: state.value.duration }),
+    ({ time, duration }) => {
+      if (time > 0 && duration > 0) {
+        console.log('[useMediaPlayer] Saving progress', {
+          type: source.type,
+          time,
+          duration
+        })
+        updateProgress(source.id, source.type, time, duration)
       }
-    }, 1000)
-  }
-
-  const stopTimeTracking = () => {
-    if (timeTrackingInterval) {
-      window.clearInterval(timeTrackingInterval)
-      timeTrackingInterval = null
     }
-  }
-
-  // Media element event handlers
-  const handleTimeUpdate = (time?: number) => {
-    if (time !== undefined) {
-      state.value.currentTime = time
-    } else if (audioElement.value) {
-      state.value.currentTime = audioElement.value.currentTime
-    } else if (videoElement.value) {
-      state.value.currentTime = videoElement.value.currentTime
-    }
-  }
-
-  const handleDurationChange = () => {
-    if (audioElement.value) {
-      state.value.duration = audioElement.value.duration
-    } else if (videoElement.value) {
-      state.value.duration = videoElement.value.duration
-    }
-  }
-
-  const handleProgress = () => {
-    const element = audioElement.value || videoElement.value
-    if (!element) return
-
-    const ranges: TimeRange[] = []
-    for (let i = 0; i < element.buffered.length; i++) {
-      ranges.push({
-        start: element.buffered.start(i),
-        end: element.buffered.end(i)
-      })
-    }
-    state.value.buffered = ranges
-  }
-
-  const handleError = (error: Error) => {
-    state.value.error = error
-    state.value.isLoading = false
-  }
+  )
 
   // Controls
-  const controls: MediaPlayerControls = {
+  const controls = {
     async play() {
+      console.log('[useMediaPlayer] Play called', {
+        type: source.type,
+        element: source.type === 'audio' ? audioElement?.value : videoElement?.value
+      })
       try {
-        state.value.isLoading = true
         if (source.type === 'youtube' && youtubePlayer.value) {
           youtubePlayer.value.playVideo()
         } else {
-          const element = audioElement.value || videoElement.value
+          const element = audioElement?.value || videoElement?.value
           if (element) {
+            console.log('[useMediaPlayer] Playing element', { 
+              readyState: element.readyState,
+              currentTime: element.currentTime,
+              paused: element.paused,
+              ended: element.ended,
+              error: element.error,
+              stateCurrentTime: state.value.currentTime
+            })
+            // Sync currentTime with state before playing
+            if (state.value.currentTime > 0 && Math.abs(element.currentTime - state.value.currentTime) > 0.1) {
+              console.log('[useMediaPlayer] Syncing currentTime before play:', state.value.currentTime)
+              element.currentTime = state.value.currentTime
+            }
             await element.play()
+          } else {
+            console.error('[useMediaPlayer] No media element found')
           }
         }
-        state.value.isPlaying = true
-        startTimeTracking()
       } catch (error) {
-        handleError(error as Error)
-      } finally {
-        state.value.isLoading = false
+        console.error('[useMediaPlayer] Play error:', error)
       }
     },
 
     pause() {
-      if (source.type === 'youtube' && youtubePlayer.value) {
-        youtubePlayer.value.pauseVideo()
-      } else {
-        const element = audioElement.value || videoElement.value
-        if (element) {
-          element.pause()
+      console.log('[useMediaPlayer] Pause called', {
+        type: source.type,
+        isPlaying: state.value.isPlaying
+      })
+      try {
+        if (source.type === 'youtube' && youtubePlayer.value) {
+          youtubePlayer.value.pauseVideo()
+        } else {
+          const element = audioElement?.value || videoElement?.value
+          if (element) {
+            element.pause()
+          }
         }
+      } catch (error) {
+        console.error('[useMediaPlayer] Pause error:', error)
       }
-      state.value.isPlaying = false
-      stopTimeTracking()
     },
 
     async togglePlay() {
+      console.log('[useMediaPlayer] Toggle play called', {
+        type: source.type,
+        isPlaying: state.value.isPlaying
+      })
       if (state.value.isPlaying) {
         controls.pause()
       } else {
@@ -164,84 +152,209 @@ export function useMediaPlayer(source: MediaSource, container?: Ref<HTMLElement 
     },
 
     seek(time: number) {
-      if (time < 0) time = 0
-      if (time > state.value.duration) time = state.value.duration
+      console.log('[useMediaPlayer] Seek called', {
+        type: source.type,
+        time,
+        currentTime: state.value.currentTime,
+        duration: state.value.duration
+      })
+      try {
+        // If time is between 0 and 1, treat it as a percentage
+        const targetTime = time <= 1 ? time * state.value.duration : time
 
-      if (source.type === 'youtube' && youtubePlayer.value) {
-        youtubePlayer.value.seekTo(time, true)
-      } else {
-        const element = audioElement.value || videoElement.value
-        if (element) {
-          element.currentTime = time
+        if (source.type === 'youtube' && youtubePlayer.value) {
+          youtubePlayer.value.seekTo(targetTime, true)
+          state.value.currentTime = targetTime
+        } else {
+          const element = audioElement?.value || videoElement?.value
+          if (element) {
+            console.log('[useMediaPlayer] Seeking element', {
+              readyState: element.readyState,
+              currentTime: element.currentTime,
+              duration: element.duration,
+              targetTime
+            })
+            element.currentTime = targetTime
+            state.value.currentTime = targetTime
+            updateProgress(source.id, source.type, state.value.currentTime, state.value.duration)
+          }
         }
+      } catch (error) {
+        console.error('[useMediaPlayer] Seek error:', error)
       }
-      handleTimeUpdate(time)
     },
 
     setVolume(volume: number) {
-      if (volume < 0) volume = 0
-      if (volume > 1) volume = 1
-
-      if (source.type === 'youtube' && youtubePlayer.value) {
-        youtubePlayer.value.setVolume(volume * 100)
-      } else {
-        const element = audioElement.value || videoElement.value
-        if (element) {
-          element.volume = volume
+      console.log('[useMediaPlayer] Set volume called', {
+        type: source.type,
+        volume
+      })
+      try {
+        if (source.type === 'youtube' && youtubePlayer.value) {
+          youtubePlayer.value.setVolume(volume * 100)
+        } else {
+          const element = audioElement?.value || videoElement?.value
+          if (element) {
+            element.volume = volume
+          }
         }
+        state.value.volume = volume
+      } catch (error) {
+        console.error('[useMediaPlayer] Volume error:', error)
       }
-      state.value.volume = volume
     },
 
     setSpeed(speed: number) {
-      if (source.type === 'youtube' && youtubePlayer.value) {
-        youtubePlayer.value.setPlaybackRate(speed)
-      } else {
-        const element = audioElement.value || videoElement.value
-        if (element) {
-          element.playbackRate = speed
+      console.log('[useMediaPlayer] Set speed called', {
+        type: source.type,
+        speed
+      })
+      try {
+        if (source.type === 'youtube' && youtubePlayer.value) {
+          youtubePlayer.value.setPlaybackRate(speed)
+        } else {
+          const element = audioElement?.value || videoElement?.value
+          if (element) {
+            element.playbackRate = speed
+          }
         }
+        state.value.speed = speed
+      } catch (error) {
+        console.error('[useMediaPlayer] Speed error:', error)
       }
-      state.value.speed = speed
     },
 
-    skipForward(seconds = 15) {
+    skipForward(seconds: number = 10) {
+      console.log('[useMediaPlayer] Skip forward called', {
+        type: source.type,
+        seconds
+      })
       controls.seek(state.value.currentTime + seconds)
     },
 
-    skipBackward(seconds = 15) {
+    skipBackward(seconds: number = 10) {
+      console.log('[useMediaPlayer] Skip backward called', {
+        type: source.type,
+        seconds
+      })
       controls.seek(state.value.currentTime - seconds)
+    },
+
+    setMediaElement(element: HTMLMediaElement | null) {
+      console.log('[useMediaPlayer] Setting media element', {
+        type: source.type,
+        element
+      })
+
+      if (!element) return
+
+      if (source.type === 'audio') {
+        audioElement.value = element as HTMLAudioElement
+      } else if (source.type === 'video') {
+        videoElement.value = element as HTMLVideoElement
+      }
+
+      // Set up event listeners
+      let canPlayHandled = false
+
+      element.addEventListener('loadstart', () => {
+        console.log(`[useMediaPlayer] ${source.type} loadstart`)
+      })
+
+      element.addEventListener('loadedmetadata', () => {
+        console.log(`[useMediaPlayer] ${source.type} loadedmetadata`, {
+          duration: element.duration,
+          readyState: element.readyState
+        })
+        if (element.duration && !isNaN(element.duration)) {
+          state.value.duration = element.duration
+        }
+        state.value.isLoading = false
+      })
+      
+      element.addEventListener('timeupdate', () => {
+        // Update time regardless of play state to handle seeking
+        state.value.currentTime = element.currentTime
+        updateProgress(source.id, source.type, state.value.currentTime, state.value.duration)
+      })
+      
+      element.addEventListener('durationchange', () => {
+        console.log(`[useMediaPlayer] ${source.type} durationchange`, {
+          duration: element.duration
+        })
+        if (element.duration && !isNaN(element.duration)) {
+          state.value.duration = element.duration
+          updateProgress(source.id, source.type, state.value.currentTime, element.duration)
+        }
+      })
+      
+      element.addEventListener('play', () => {
+        console.log(`[useMediaPlayer] ${source.type} play`)
+        state.value.isPlaying = true
+        state.value.isLoading = false
+      })
+      
+      element.addEventListener('pause', () => {
+        console.log(`[useMediaPlayer] ${source.type} pause`)
+        state.value.isPlaying = false
+      })
+      
+      element.addEventListener('waiting', () => {
+        console.log(`[useMediaPlayer] ${source.type} waiting`)
+        state.value.isLoading = true
+      })
+      
+      element.addEventListener('canplay', () => {
+        // Only handle canplay once to avoid infinite loops
+        if (!canPlayHandled) {
+          console.log(`[useMediaPlayer] ${source.type} canplay`, {
+            readyState: element.readyState,
+            duration: element.duration,
+            stateCurrentTime: state.value.currentTime
+          })
+          state.value.isLoading = false
+          
+          // Set initial time if we have saved progress
+          if (state.value.currentTime > 0) {
+            console.log(`[useMediaPlayer] Restoring ${source.type} time to:`, state.value.currentTime)
+            element.currentTime = state.value.currentTime
+          }
+          
+          canPlayHandled = true
+        }
+      })
+      
+      element.addEventListener('error', () => {
+        const error = element.error
+        console.error(`[useMediaPlayer] ${source.type} error`, {
+          code: error?.code,
+          message: error?.message
+        })
+        state.value.error = new Error(`${source.type} loading error`)
+        state.value.isLoading = false
+      })
+
+      // Set initial volume and speed
+      element.volume = state.value.volume
+      element.playbackRate = state.value.speed
     }
-  }
+  } as const
 
   // Initialize media element based on source type
   onMounted(async () => {
-    if (source.type === 'audio') {
-      audioElement.value = new Audio(source.url)
-      audioElement.value.preload = 'metadata'
-      
-      audioElement.value.addEventListener('timeupdate', () => handleTimeUpdate())
-      audioElement.value.addEventListener('durationchange', handleDurationChange)
-      audioElement.value.addEventListener('progress', handleProgress)
-      audioElement.value.addEventListener('waiting', () => state.value.isLoading = true)
-      audioElement.value.addEventListener('canplay', () => state.value.isLoading = false)
-      audioElement.value.addEventListener('error', (e) => handleError(new Error('Audio loading error')))
-    } else if (source.type === 'video') {
-      videoElement.value = document.createElement('video')
-      videoElement.value.src = source.url
-      videoElement.value.preload = 'metadata'
-      
-      videoElement.value.addEventListener('timeupdate', () => handleTimeUpdate())
-      videoElement.value.addEventListener('durationchange', handleDurationChange)
-      videoElement.value.addEventListener('progress', handleProgress)
-      videoElement.value.addEventListener('waiting', () => state.value.isLoading = true)
-      videoElement.value.addEventListener('canplay', () => state.value.isLoading = false)
-      videoElement.value.addEventListener('error', (e) => handleError(new Error('Video loading error')))
-      
-      if (container?.value) {
-        container.value.appendChild(videoElement.value)
-      }
-    } else if (source.type === 'youtube' && container?.value) {
+    console.log('[useMediaPlayer] Mounting', {
+      type: source.type,
+      url: source.url
+    })
+
+    // Load saved progress
+    const savedProgress = getProgress(source.id, source.type)
+    if (savedProgress) {
+      state.value.currentTime = savedProgress.currentTime
+      state.value.duration = savedProgress.duration
+    }
+
+    if (source.type === 'youtube' && container?.value) {
       try {
         await loadYouTubeApi()
         const videoId = getYouTubeVideoId(source.url)
@@ -256,69 +369,83 @@ export function useMediaPlayer(source: MediaSource, container?: Ref<HTMLElement 
           },
           events: {
             onReady: () => {
+              console.log('[useMediaPlayer] YouTube player ready')
               state.value.isLoading = false
               state.value.duration = youtubePlayer.value.getDuration()
+              const savedProgress = getProgress(source.id, source.type)
+              if (savedProgress) {
+                youtubePlayer.value.seekTo(savedProgress.currentTime, true)
+                state.value.currentTime = savedProgress.currentTime
+              }
             },
             onStateChange: (event) => {
-              const PlayerState = {
-                PLAYING: 1,
-                PAUSED: 2,
-                BUFFERING: 3,
-                ENDED: 0
-              } as const;
-
+              console.log('[useMediaPlayer] YouTube player state change', {
+                state: event.data
+              })
               switch (event.data) {
-                case PlayerState.PLAYING:
+                case window.YT.PlayerState.PLAYING:
+                  console.log('[useMediaPlayer] YouTube player playing')
                   state.value.isPlaying = true
                   state.value.isLoading = false
-                  startTimeTracking()
+                  // Start time tracking
+                  if (!timeTrackingInterval) {
+                    timeTrackingInterval = window.setInterval(() => {
+                      if (youtubePlayer.value?.getCurrentTime) {
+                        state.value.currentTime = youtubePlayer.value.getCurrentTime()
+                        updateProgress(source.id, source.type, state.value.currentTime, state.value.duration)
+                      }
+                    }, 250)
+                  }
                   break
-                case PlayerState.PAUSED:
+                case window.YT.PlayerState.PAUSED:
+                  console.log('[useMediaPlayer] YouTube player paused')
                   state.value.isPlaying = false
-                  stopTimeTracking()
+                  state.value.isLoading = false
+                  if (timeTrackingInterval) {
+                    window.clearInterval(timeTrackingInterval)
+                    timeTrackingInterval = null
+                  }
                   break
-                case PlayerState.BUFFERING:
+                case window.YT.PlayerState.BUFFERING:
+                  console.log('[useMediaPlayer] YouTube player buffering')
                   state.value.isLoading = true
                   break
-                case PlayerState.ENDED:
+                case window.YT.PlayerState.ENDED:
+                  console.log('[useMediaPlayer] YouTube player ended')
                   state.value.isPlaying = false
-                  stopTimeTracking()
+                  state.value.isLoading = false
+                  if (timeTrackingInterval) {
+                    window.clearInterval(timeTrackingInterval)
+                    timeTrackingInterval = null
+                  }
                   break
               }
             },
-            onError: () => handleError(new Error('YouTube player error'))
+            onError: () => {
+              console.error('[useMediaPlayer] YouTube player error')
+              state.value.error = new Error('YouTube player error')
+              state.value.isLoading = false
+            }
           }
         })
       } catch (error) {
-        handleError(error as Error)
+        console.error('[useMediaPlayer] YouTube error:', error)
+        state.value.error = error as Error
+        state.value.isLoading = false
       }
     }
   })
 
   // Cleanup
   onUnmounted(() => {
-    stopTimeTracking()
-    
-    if (audioElement.value) {
-      audioElement.value.pause()
-      audioElement.value.src = ''
-      audioElement.value.remove()
-    }
-    
-    if (videoElement.value) {
-      videoElement.value.pause()
-      videoElement.value.src = ''
-      videoElement.value.remove()
-    }
-    
-    if (youtubePlayer.value) {
-      youtubePlayer.value.destroy()
+    if (timeTrackingInterval) {
+      window.clearInterval(timeTrackingInterval)
+      timeTrackingInterval = null
     }
   })
 
   return {
     state,
-    controls,
-    formatTime
+    controls
   }
 }

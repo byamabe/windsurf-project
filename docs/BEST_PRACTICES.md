@@ -417,6 +417,33 @@ export default defineEventHandler(async (event) => {
 - Access control
 - Audit logging
 
+## State Management
+
+### Media Progress Tracking
+When tracking progress for different types of media (audio, video, etc.), use separate storage for each type:
+
+```typescript
+// Separate localStorage keys for different types
+const STORAGE_KEYS = {
+  audio: 'media_progress_audio',
+  video: 'media_progress_video',
+  youtube: 'media_progress_youtube'
+}
+
+// Independent reactive refs for each type
+const progress = {
+  audio: ref<Record<string, MediaProgress>>({}),
+  video: ref<Record<string, MediaProgress>>({}),
+  youtube: ref<Record<string, MediaProgress>>({})
+}
+```
+
+This ensures:
+- Each media type's progress is tracked independently
+- Updates to one type don't affect others
+- Progress restoration works reliably
+- The system is extensible for new media types
+
 ## Performance
 
 ### Frontend Optimization

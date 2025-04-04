@@ -502,3 +502,39 @@ Fixed issues with dropdown menus in the admin interface:
    - Improved accessibility
 
 See the [Headless UI Dropdown Menus section](docs/BEST_PRACTICES.md#headless-ui-dropdown-menus-with-client-side-navigation) in Best Practices for implementation details.
+
+## Media Player Progress System (2025-04-03 17:53 PST)
+#### Fixed Media Progress Tracking
+- Implemented separate progress tracking for each media type (audio, video, YouTube)
+- Changes made to:
+  - `composables/useMediaProgress.ts`:
+    - Added separate localStorage keys for each media type
+    - Created independent reactive refs for each type
+    - Improved progress saving and restoration logic
+  - `composables/useMediaPlayer.ts`:
+    - Enhanced time restoration logic
+    - Added better logging for debugging
+    - Improved event handling for media elements
+
+#### Technical Details
+- Each media type now has its own storage space:
+  ```typescript
+  const STORAGE_KEYS = {
+    audio: 'media_progress_audio',
+    video: 'media_progress_video',
+    youtube: 'media_progress_youtube'
+  }
+  ```
+- Progress data is stored independently to prevent cross-contamination
+- Added watch effect to automatically save progress on time/duration changes
+- Improved time restoration by syncing state before playback
+
+#### Impact
+- Fixed issue where only the last played media's progress was being saved
+- All media types now correctly remember and restore their playback positions
+- System is now more maintainable and extensible for future media types
+
+#### Next Steps
+- Consider adding progress cleanup for old/unused media
+- Add progress indicators in media listings
+- Implement batch operations for progress management

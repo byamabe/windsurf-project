@@ -8,9 +8,15 @@
       @mouseleave="isHovering = false"
     >
       <!-- Progress -->
-      <div class="absolute inset-0 bg-red-600 transform origin-left" :style="{ transform: `scaleX(${getProgress})` }"></div>
+      <div 
+        class="absolute inset-0 bg-red-600 transform origin-left" 
+        :style="{ transform: `scaleX(${getProgress})` }"
+      ></div>
       <!-- Buffer -->
-      <div class="absolute inset-0 bg-white/20" :style="{ transform: `scaleX(${buffered})` }"></div>
+      <div 
+        class="absolute inset-0 bg-white/20" 
+        :style="{ transform: `scaleX(${props.buffered || 0})` }"
+      ></div>
       <!-- Hover area -->
       <div class="absolute inset-0 h-1 group-hover:h-2 transition-all duration-200">
         <!-- Scrubber -->
@@ -121,8 +127,12 @@ const isHovering = ref(false)
 const hoverPosition = ref(0)
 
 const getProgress = computed(() => {
-  if (!props.duration) return 0
-  return props.currentTime / props.duration
+  console.log('[MediaControls] Progress', {
+    currentTime: props.currentTime,
+    duration: props.duration,
+    progress: props.duration ? props.currentTime / props.duration : 0
+  })
+  return props.duration ? props.currentTime / props.duration : 0
 })
 
 const handleSeek = (event: MouseEvent) => {
